@@ -70,15 +70,42 @@ describe('feedStore — setFilter', () => {
 
 describe('feedStore — incrementCursor', () => {
   it('increments cursor by 1', () => {
+    act(() => useFeedStore.getState().setVideos([{}, {}, {}]))
     act(() => useFeedStore.getState().incrementCursor())
     expect(useFeedStore.getState().cursor).toBe(1)
   })
 
   it('increments cursor multiple times', () => {
+    act(() => useFeedStore.getState().setVideos([{}, {}, {}, {}]))
     act(() => useFeedStore.getState().incrementCursor())
     act(() => useFeedStore.getState().incrementCursor())
     act(() => useFeedStore.getState().incrementCursor())
     expect(useFeedStore.getState().cursor).toBe(3)
+  })
+
+  it('does not go past the last video', () => {
+    act(() => useFeedStore.getState().setVideos([{}, {}]))
+    act(() => useFeedStore.getState().incrementCursor())
+    act(() => useFeedStore.getState().incrementCursor())
+    act(() => useFeedStore.getState().incrementCursor())
+    expect(useFeedStore.getState().cursor).toBe(1)
+  })
+})
+
+// ─── decrementCursor ──────────────────────────────────────────────────────────
+
+describe('feedStore — decrementCursor', () => {
+  it('decrements cursor by 1', () => {
+    act(() => useFeedStore.getState().setVideos([{}, {}, {}]))
+    act(() => useFeedStore.getState().incrementCursor())
+    act(() => useFeedStore.getState().incrementCursor())
+    act(() => useFeedStore.getState().decrementCursor())
+    expect(useFeedStore.getState().cursor).toBe(1)
+  })
+
+  it('does not go below 0', () => {
+    act(() => useFeedStore.getState().decrementCursor())
+    expect(useFeedStore.getState().cursor).toBe(0)
   })
 })
 
@@ -86,6 +113,7 @@ describe('feedStore — incrementCursor', () => {
 
 describe('feedStore — resetCursor', () => {
   it('resets cursor back to 0', () => {
+    act(() => useFeedStore.getState().setVideos([{}, {}, {}]))
     act(() => useFeedStore.getState().incrementCursor())
     act(() => useFeedStore.getState().incrementCursor())
     act(() => useFeedStore.getState().resetCursor())

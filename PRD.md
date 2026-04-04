@@ -43,7 +43,7 @@ A developer or CS student who:
 - Follows 10–30 tech YouTube channels
 - Learns through short-form video content
 - Has limited time and wants structured micro-learning sessions
-- Primarily uses the app on mobile (commute, breaks)
+- Primarily uses the app on **iPhone (iOS Safari)** as an installed PWA
 
 ---
 
@@ -176,6 +176,9 @@ A developer or CS student who:
 - Cache strategy: Cache-first for static assets, network-first for API responses
 - Offline state: show cached video list with a "you're offline" banner
 - Theme colour: dark (`#0d0d0d`) to match video player aesthetic
+- **iOS install:** No `beforeinstallprompt` on Safari — show a persistent "Add to Home Screen" banner with instructions on first visit (dismissible, stored in LocalStorage)
+- **iOS autoplay:** Safari blocks `playVideo()` without a prior user gesture — show a tap-to-play overlay on the active card until the user has tapped once per session
+- **iOS viewport:** Use `100dvh` (dynamic viewport height) to account for Safari's collapsing toolbar
 
 ---
 
@@ -240,14 +243,18 @@ No router needed beyond these two routes. Use React Router v6 with hash routing 
 
 ## 11. Non-Functional Requirements
 
+**Primary target: iPhone on iOS Safari, installed as a PWA. All performance targets are measured on mobile.**
+
 | Requirement | Target |
 |---|---|
-| First Contentful Paint (mobile) | < 2s on 4G |
-| Time to first video visible | < 3s |
-| Lighthouse PWA score | ≥ 90 |
-| Lighthouse Performance (mobile) | ≥ 80 |
+| First Contentful Paint (iPhone, 4G) | < 2s |
+| Time to first video card visible (iPhone) | < 3s |
+| Lighthouse PWA score (mobile) | ≥ 90 |
+| Lighthouse Performance (iPhone Moto G4 sim) | ≥ 80 |
 | Bundle size (gzipped) | < 200KB (excl. YouTube IFrame) |
-| Supported browsers | Chrome 90+, Safari 15+, Firefox 90+ |
+| Touch responsiveness | No jank on swipe — 60fps scroll |
+| Primary browser | iOS Safari 15.4+ (iPhone) |
+| Secondary browsers | Chrome 90+, Firefox 90+ |
 
 ---
 
@@ -312,10 +319,10 @@ bytereels/
 |---|---|
 | **M1 — Scaffold** ✅ | Vite + React + Tailwind + PWA plugin, manifest, Vercel deploy pipeline |
 | **M2 — Data Layer** ✅ | `channels.json` schema, YouTube API client, duration filtering, session cache |
-| **M3 — Feed UI** | `SwipeFeed`, `VideoCard`, `YouTubeEmbed`, swipe gestures, IntersectionObserver autoplay |
+| **M3 — Feed UI** ✅ | `SwipeFeed`, `VideoCard`, `YouTubeEmbed`, swipe gestures, IntersectionObserver autoplay |
 | **M4 — Filters** | `FilterBar`, tag chip logic, filter persistence |
 | **M5 — History** | Watch history tracking, progress save/restore, history clear in settings |
-| **M6 — Polish** | Offline banner, loading skeletons, empty states, Lighthouse audit, icons |
+| **M6 — Polish** | Offline banner, loading skeletons, empty states, Lighthouse audit (mobile), icons; **iOS autoplay tap-to-play overlay**; iOS "Add to Home Screen" install banner |
 
 ---
 

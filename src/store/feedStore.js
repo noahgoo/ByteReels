@@ -13,7 +13,10 @@ const useFeedStore = create((set) => ({
 
   setFilter: (filter) => set({ activeFilter: filter, cursor: 0 }),
 
-  incrementCursor: () => set((s) => ({ cursor: s.cursor + 1 })),
+  incrementCursor: () =>
+    set((s) => ({ cursor: Math.max(0, Math.min(s.cursor + 1, s.videos.length - 1)) })),
+
+  decrementCursor: () => set((s) => ({ cursor: Math.max(s.cursor - 1, 0) })),
 
   resetCursor: () => set({ cursor: 0 }),
 }))
