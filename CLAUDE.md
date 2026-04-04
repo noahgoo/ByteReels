@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Status
 
-ByteReels is currently in the **pre-implementation phase** — only the PRD exists. The app has not been scaffolded yet. See `PRD.md` for full product requirements.
+**M1 ✅ M2 ✅** — Scaffold and data layer are complete. See `PRD.md` for the full milestone table.
 
 ## Planned Stack
 
@@ -83,15 +83,22 @@ Two routes only: `/` (feed) and `/settings`. No complex routing needed.
 
 **Duration filtering:** YouTube's `videoDuration` param only has coarse buckets. Fetch both `short` (< 4 min) and `medium` (4–20 min), then discard anything ≥ 600 seconds after calling `videos.list`.
 
-## Key Files (planned)
+## Known Setup Notes
+
+- **ESLint JSX:** `eslint.config.js` must include `languageOptions.parserOptions.ecmaFeatures.jsx: true` — the default `@eslint/js` config does not enable JSX parsing. The `globals` package is also required for `globals.browser`.
+- **Testing peer deps:** `@testing-library/dom` must be installed explicitly (peer dep of `@testing-library/react`).
+- **Zustand test isolation:** `feedStore.js` exports `useFeedStore.getInitialState()` so tests can call `useFeedStore.setState(useFeedStore.getInitialState())` in `beforeEach` to reset state between tests.
+- **React version:** The scaffold uses React 19 (not 18 as listed in the PRD).
+
+## Key Files
 
 | File | Purpose |
 |---|---|
-| `src/api/youtube.js` | YouTube Data API client — all API calls live here |
-| `src/store/feedStore.js` | Zustand store: video list, filters, pagination |
+| `src/api/youtube.js` | YouTube Data API client — `parseDuration`, `filterVideos`, `fetchVideosForChannel`, `fetchAllVideos` |
+| `src/store/feedStore.js` | Zustand store: `videos`, `activeFilter`, `cursor` + actions |
 | `src/data/channels.json` | Curated channel IDs + tags (schema in PRD §6.2) |
-| `src/hooks/useWatchHistory.js` | LocalStorage read/write for watch history |
-| `src/hooks/useVideoProgress.js` | LocalStorage read/write for per-video timestamps |
+| `src/hooks/useWatchHistory.js` | LocalStorage read/write for watch history *(M5)* |
+| `src/hooks/useVideoProgress.js` | LocalStorage read/write for per-video timestamps *(M5)* |
 | `.env.local` | `VITE_YOUTUBE_API_KEY` — never commit this |
 
 ## LocalStorage Schema

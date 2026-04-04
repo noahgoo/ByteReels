@@ -311,7 +311,7 @@ bytereels/
 | Milestone | Deliverables |
 |---|---|
 | **M1 — Scaffold** ✅ | Vite + React + Tailwind + PWA plugin, manifest, Vercel deploy pipeline |
-| **M2 — Data Layer** | `channels.json` schema, YouTube API client, duration filtering, session cache |
+| **M2 — Data Layer** ✅ | `channels.json` schema, YouTube API client, duration filtering, session cache |
 | **M3 — Feed UI** | `SwipeFeed`, `VideoCard`, `YouTubeEmbed`, swipe gestures, IntersectionObserver autoplay |
 | **M4 — Filters** | `FilterBar`, tag chip logic, filter persistence |
 | **M5 — History** | Watch history tracking, progress save/restore, history clear in settings |
