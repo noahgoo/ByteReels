@@ -33,6 +33,7 @@ YouTube's homepage and Shorts feed are optimised for watch time, not learning. D
 - Uploading or creating videos
 - Recommendations or algorithmic ranking
 - Offline video playback (videos stream from YouTube)
+- YouTube Shorts (9:16 vertical videos) — v1 is 16:9 regular videos only to keep card layout consistent
 
 ---
 
@@ -283,7 +284,29 @@ bytereels/
 
 ---
 
-## 13. v1 Milestones
+## 13. Testing Strategy
+
+**Approach:** Test-driven development. Write tests before implementation, iterate until passing, then move on.
+
+**Framework:** Vitest + React Testing Library + jsdom
+
+### Test coverage by milestone
+
+| Milestone | Test targets |
+|---|---|
+| M2 — Data Layer | `parseDuration` (ISO 8601 → seconds), `isUnderTenMinutes` boundary cases (`PT9M59S` passes, `PT10M00S` rejected), Zustand store actions |
+| M3 — Feed UI | `VideoCard` renders watched indicator when video is in watch history; `FilterBar` renders correct chips from channel tags |
+| M4 — Filters | Filter action updates store; "All" chip resets filter; active filter persists to/restores from LocalStorage |
+| M5 — History | `useWatchHistory`: mark started at >10s, mark watched at >90%; `useVideoProgress`: saves and restores timestamp |
+
+### Out of scope for unit tests
+- Raw YouTube API fetch calls (mock the client, test the transform)
+- YouTube IFrame Player and swipe gesture behavior (manual or Playwright e2e)
+- Service worker / PWA install flow
+
+---
+
+## 14. v1 Milestones
 
 | Milestone | Deliverables |
 |---|---|
@@ -305,3 +328,4 @@ bytereels/
 - **Keyboard shortcuts** — j/k navigation, space to play/pause
 - **Chromecast / AirPlay** — send video to TV
 - **Curated packs** — shareable `channels.json` bundles for specific learning paths (e.g. "Frontend 2026", "Linux Admin")
+- **Shorts support** — opt-in Shorts-only channels using the `UUSH` playlist API (1 quota unit vs 100 for `search.list`); rendered in a separate 9:16 full-screen card layout to avoid aspect ratio conflicts with regular 16:9 videos
