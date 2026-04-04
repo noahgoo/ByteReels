@@ -8,7 +8,7 @@
 
 ## 1. Overview
 
-ByteReels is a mobile-first Progressive Web App that turns your YouTube tech subscriptions into a swipeable, Reels-style video feed. It surfaces short (1–7 minute) educational videos from a curated set of channels, filtered by topic, so you can learn in focused micro-sessions instead of browsing YouTube's algorithm.
+ByteReels is a mobile-first Progressive Web App that turns your YouTube tech subscriptions into a swipeable, Reels-style video feed. It surfaces short (under 10 minute) educational videos from a curated set of channels, filtered by topic, so you can learn in focused micro-sessions instead of browsing YouTube's algorithm.
 
 ---
 
@@ -21,7 +21,7 @@ YouTube's homepage and Shorts feed are optimised for watch time, not learning. D
 ## 3. Goals & Non-Goals
 
 ### Goals (v1)
-- Swipeable vertical feed of short tech YouTube videos (1–7 min)
+- Swipeable vertical feed of short tech YouTube videos (under 10 min)
 - Fetch videos from a curated, user-configured list of YouTube channels via the YouTube Data API v3
 - Filter the feed by topic/tag (e.g. React, Linux, AI, Git)
 - Track watch history and per-video progress locally
@@ -51,7 +51,7 @@ A developer or CS student who:
 | # | As a user I want to… | So that… |
 |---|---|---|
 | U1 | Swipe up through a vertical feed of tech videos | I can quickly find something worth watching |
-| U2 | See only videos between 1–7 minutes long | I don't accidentally start a long video |
+| U2 | See only videos under 10 minutes long | I don't accidentally start a long video |
 | U3 | Filter the feed by topic (React, AI, Linux…) | I can focus on what I'm learning right now |
 | U4 | See which videos I've already watched | I don't re-watch content unintentionally |
 | U5 | Resume a video where I left off | I don't lose my place if I swipe away |
@@ -91,7 +91,7 @@ A developer or CS student who:
 ### 6.1 Data Flow
 
 1. App boots → reads `channels.json` (curated channel IDs + tags)
-2. For each channel, calls `youtube.search.list` filtered to `videoDuration=short` (< 4 min) and `medium` (4–20 min) — post-filters to 1–7 min client-side using `videos.list` duration data
+2. For each channel, calls `youtube.search.list` filtered to `videoDuration=short` (< 4 min) and `medium` (4–20 min) — post-filters to under 10 min client-side using `videos.list` duration data
 3. Normalised video list is stored in app state (React Context or Zustand)
 4. UI renders the swipe feed, merging API data with LocalStorage watch state
 
@@ -205,11 +205,11 @@ A developer or CS student who:
 
 ### Duration Filtering Strategy
 
-YouTube's `videoDuration` param only supports coarse buckets (`short` < 4 min, `medium` 4–20 min). To get exactly 1–7 min:
+YouTube's `videoDuration` param only supports coarse buckets (`short` < 4 min, `medium` 4–20 min). To get videos under 10 min:
 
 1. Fetch both `short` and `medium` results per channel
 2. Call `videos.list?part=contentDetails` with the result IDs
-3. Parse ISO 8601 duration (e.g. `PT6M32S`) and discard videos outside 60–420 seconds
+3. Parse ISO 8601 duration (e.g. `PT6M32S`) and discard videos at or above 600 seconds (10 min)
 
 ### API Quota Management
 
