@@ -7,21 +7,9 @@
       "maxResults": 10
     },
     {
-      "id": "UCXuqSBlHAE6Xw-yeJA0Tunw",
-      "name": "Linus Tech Tips",
-      "tags": ["linux", "career"],
-      "maxResults": 10
-    },
-    {
       "id": "UC2eYFnH61tmytImy1mTYvhA",
       "name": "Luke Smith",
       "tags": ["linux", "web"],
-      "maxResults": 10
-    },
-    {
-      "id": "UCsBjURrPoezykLs9EqgamOA",
-      "name": "Fireship (TypeScript)",
-      "tags": ["typescript", "javascript", "web"],
       "maxResults": 10
     },
     {
