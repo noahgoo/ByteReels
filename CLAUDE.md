@@ -102,6 +102,17 @@ Two routes only: `/` (feed) and `/settings`. No complex routing needed.
 - **Testing peer deps:** `@testing-library/dom` must be installed explicitly (peer dep of `@testing-library/react`).
 - **Zustand test isolation:** `feedStore.js` exports `useFeedStore.getInitialState()` so tests can call `useFeedStore.setState(useFeedStore.getInitialState())` in `beforeEach` to reset state between tests.
 - **React version:** The scaffold uses React 19 (not 18 as listed in the PRD).
+- **jsdom stubs needed:** `IntersectionObserver` and `scrollIntoView` are not implemented in jsdom. `IntersectionObserver` is stubbed globally in `src/test/setup.js`. `scrollIntoView` calls must be guarded with `typeof el?.scrollIntoView === 'function'` in component code.
+- **`useSwipeable` ref:** `useSwipeable` returns a `ref` inside its handlers object. Merge it with any local ref using a `useCallback` ref — do not pass both a spread `{...handlers}` and a separate `ref=` prop or one will overwrite the other.
+- **Mock dev mode:** Set `VITE_USE_MOCK=true` in `.env.local` to load `src/data/mockVideos.js` instead of calling the YouTube API. Zero quota cost. Real video IDs with YouTube thumbnails.
+
+## YouTube IFrame API — Key Behaviour
+
+- `window.onYouTubeIframeAPIReady` must be assigned at **module evaluation time**, not inside `useEffect` — there is a race where the script fires the callback before the effect runs.
+- `YT.Player` **replaces** the target DOM node with an IFrame. Always point it at a plain `<div ref>` with no React children and never re-render that div after the player is created.
+- **Autoplay is blocked** by Chrome and Safari unless the video is muted. Always set `mute: 1` in `playerVars` and unmute programmatically after a user gesture.
+- **Unmute only in `onStateChange`** when `e.data === YT.PlayerState.PLAYING` (1) — not in `onReady` or the `isActive` effect. Unmuting earlier causes audio to play over the loading spinner on slow connections or fast swipes.
+- **WebGL context limit:** browsers cap active WebGL contexts at ~16. Each `YT.Player` instance creates one. Only mount players for cards at `cursor ±1` — pass `loadPlayer={Math.abs(i - cursor) <= 1}` from `SwipeFeed` and render a thumbnail `<img>` fallback in `VideoCard` when `loadPlayer=false`.
 
 ## Key Files
 
