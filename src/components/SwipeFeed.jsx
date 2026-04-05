@@ -5,7 +5,13 @@ import VideoCard from './VideoCard.jsx'
 
 export default function SwipeFeed() {
   const videos = useFeedStore((s) => s.videos)
+  const activeFilter = useFeedStore((s) => s.activeFilter)
   const cursor = useFeedStore((s) => s.cursor)
+
+  const filteredVideos =
+    activeFilter === 'all'
+      ? videos
+      : videos.filter((v) => v.channelTags?.includes(activeFilter))
   const incrementCursor = useFeedStore((s) => s.incrementCursor)
   const decrementCursor = useFeedStore((s) => s.decrementCursor)
 
@@ -81,7 +87,7 @@ export default function SwipeFeed() {
   // ─── IntersectionObserver — keep cursor in sync on manual scroll ─────────────
   useEffect(() => {
     const container = containerRef.current
-    if (!container || videos.length === 0) return
+    if (!container || filteredVideos.length === 0) return
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -99,7 +105,7 @@ export default function SwipeFeed() {
 
     Array.from(container.children).forEach((child) => observer.observe(child))
     return () => observer.disconnect()
-  }, [videos])
+  }, [filteredVideos])
 
   // ─── Loading / empty state ───────────────────────────────────────────────────
   if (videos.length === 0) {
@@ -110,13 +116,21 @@ export default function SwipeFeed() {
     )
   }
 
+  if (filteredVideos.length === 0) {
+    return (
+      <div className="h-full flex items-center justify-center text-neutral-500 text-sm">
+        No videos for &ldquo;{activeFilter}&rdquo;
+      </div>
+    )
+  }
+
   return (
     <div
       ref={mergedRef}
       className="h-full overflow-y-scroll snap-y snap-mandatory [&::-webkit-scrollbar]:hidden"
       style={{ scrollbarWidth: 'none' }}
     >
-      {videos.map((video, i) => (
+      {filteredVideos.map((video, i) => (
         <VideoCard
           key={video.id}
           video={video}

@@ -120,3 +120,28 @@ describe('feedStore — resetCursor', () => {
     expect(useFeedStore.getState().cursor).toBe(0)
   })
 })
+
+// ─── setFilter — localStorage persistence ────────────────────────────────────
+
+describe('feedStore — setFilter localStorage persistence', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  it('persists the selected filter to localStorage', () => {
+    act(() => useFeedStore.getState().setFilter('react'))
+    expect(localStorage.getItem('activeFilter')).toBe('react')
+  })
+
+  it('persists "all" to localStorage when resetting', () => {
+    act(() => useFeedStore.getState().setFilter('linux'))
+    act(() => useFeedStore.getState().setFilter('all'))
+    expect(localStorage.getItem('activeFilter')).toBe('all')
+  })
+
+  it('overwrites a previous value with the new filter', () => {
+    act(() => useFeedStore.getState().setFilter('react'))
+    act(() => useFeedStore.getState().setFilter('css'))
+    expect(localStorage.getItem('activeFilter')).toBe('css')
+  })
+})

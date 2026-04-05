@@ -220,7 +220,7 @@ YouTube's `videoDuration` param only supports coarse buckets (`short` < 4 min, `
 - YouTube Data API v3 free quota: **10,000 units/day**
 - `search.list` costs **100 units** per call
 - `videos.list` costs **1 unit** per call
-- Strategy: Cache API responses in `sessionStorage` for the duration of a session; re-fetch only on next app open
+- Strategy: Cache API responses in `localStorage` for 24 hours (`bytereels_cache_<channelId>` keys); stale entries are evicted on read. A manual **Refresh** button in the feed header clears all cache keys and forces a new fetch.
 - Config option in `channels.json` to limit `maxResults` per channel (default: 10)
 
 ### API Key Security
@@ -320,7 +320,7 @@ bytereels/
 | **M1 — Scaffold** ✅ | Vite + React + Tailwind + PWA plugin, manifest, Vercel deploy pipeline |
 | **M2 — Data Layer** ✅ | `channels.json` schema, YouTube API client, duration filtering, session cache |
 | **M3 — Feed UI** ✅ | `SwipeFeed`, `VideoCard`, `YouTubeEmbed`, swipe gestures, IntersectionObserver autoplay |
-| **M4 — Filters** | `FilterBar`, tag chip logic, filter persistence |
+| **M4 — Filters** ✅ | `FilterBar`, tag chip logic, filter persistence |
 | **M5 — History** | Watch history tracking, progress save/restore, history clear in settings |
 | **M6 — Polish** | Offline banner, loading skeletons, empty states, Lighthouse audit (mobile), icons; **iOS autoplay tap-to-play overlay**; iOS "Add to Home Screen" install banner |
 

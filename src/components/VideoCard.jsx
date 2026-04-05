@@ -11,7 +11,7 @@ export default function VideoCard({ video, isActive, loadPlayer = true }) {
   const initial = video.channelName.charAt(0).toUpperCase()
 
   return (
-    <article className="h-full w-full flex flex-col bg-[#0d0d0d] snap-start overflow-hidden">
+    <article className="h-full w-full flex flex-col justify-center bg-[#0d0d0d] snap-start overflow-hidden">
       {loadPlayer ? (
         <YouTubeEmbed videoId={video.id} isActive={isActive} />
       ) : (

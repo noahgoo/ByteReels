@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Status
 
-**M1 ✅ M2 ✅ M3 ✅** — Scaffold, data layer, and feed UI are complete. See `PRD.md` for the full milestone table.
+**M1 ✅ M2 ✅ M3 ✅ M4 ✅** — Scaffold, data layer, and feed UI are complete. See `PRD.md` for the full milestone table.
 
 ## Platform Target
 
@@ -88,7 +88,7 @@ Two routes only: `/` (feed) and `/settings`. No complex routing needed.
 1. App boots → reads `src/data/channels.json` (curated channel IDs + tags)
 2. Calls `youtube.search.list` per channel (both `short` and `medium` duration buckets)
 3. Calls `videos.list?part=contentDetails` to get ISO 8601 durations, then filters client-side to < 600 seconds (10 min)
-4. API responses cached in `sessionStorage` — no re-fetch until next app open
+4. API responses cached in `localStorage` with a 24-hour TTL (`bytereels_cache_<channelId>`) — stale entries are evicted on read; `clearVideoCache()` in `youtube.js` wipes all keys for a forced refresh
 5. Zustand store holds normalised video list, active filter, and pagination cursor
 6. UI merges API data with LocalStorage watch state on render
 

@@ -57,16 +57,25 @@ export function filterVideos(items) {
   return items.filter((item) => isUnderTenMinutes(item.contentDetails.duration))
 }
 
-// ─── Session cache ────────────────────────────────────────────────────────────
+// ─── Persistent cache (localStorage, 24-hour TTL) ────────────────────────────
+
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000
+const CACHE_PREFIX = 'bytereels_cache_'
 
 export function getCacheKey(channelId) {
-  return `bytereels_cache_${channelId}`
+  return `${CACHE_PREFIX}${channelId}`
 }
 
 function readCache(channelId) {
   try {
-    const raw = sessionStorage.getItem(getCacheKey(channelId))
-    return raw ? JSON.parse(raw) : null
+    const raw = localStorage.getItem(getCacheKey(channelId))
+    if (!raw) return null
+    const { data, fetchedAt } = JSON.parse(raw)
+    if (Date.now() - fetchedAt > CACHE_TTL_MS) {
+      localStorage.removeItem(getCacheKey(channelId))
+      return null
+    }
+    return data
   } catch {
     return null
   }
@@ -74,9 +83,23 @@ function readCache(channelId) {
 
 function writeCache(channelId, data) {
   try {
-    sessionStorage.setItem(getCacheKey(channelId), JSON.stringify(data))
+    localStorage.setItem(getCacheKey(channelId), JSON.stringify({ data, fetchedAt: Date.now() }))
   } catch {
-    // sessionStorage full or unavailable — skip caching silently
+    // localStorage full or unavailable — skip caching silently
+  }
+}
+
+/**
+ * Clear all cached video data. Call before a forced refresh so
+ * fetchVideosForChannel hits the API instead of returning stale data.
+ */
+export function clearVideoCache() {
+  try {
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith(CACHE_PREFIX))
+      .forEach((k) => localStorage.removeItem(k))
+  } catch {
+    // ignore
   }
 }
 
