@@ -178,6 +178,43 @@ export async function fetchVideosForChannel(channel, apiKey) {
 }
 
 /**
+ * Resolve a YouTube channel URL, @handle, or channel ID to { id, name }.
+ * Accepts:
+ *   https://youtube.com/@fireship
+ *   @fireship
+ *   UCVhQ2NnY5Rskt6UjCUkJ_DA
+ *   https://youtube.com/channel/UCVhQ2NnY5Rskt6UjCUkJ_DA
+ *
+ * @param {string} input
+ * @param {string} apiKey
+ * @returns {Promise<{ id: string, name: string }>}
+ */
+export async function resolveChannel(input, apiKey) {
+  const clean = input.trim().replace(/^https?:\/\/(www\.)?youtube\.com\//, '')
+
+  const params = new URLSearchParams({ part: 'snippet', key: apiKey })
+
+  if (clean.startsWith('channel/')) {
+    params.set('id', clean.slice('channel/'.length))
+  } else if (/^UC[\w-]{22}$/.test(clean)) {
+    params.set('id', clean)
+  } else {
+    // @handle, bare handle, or /c/ /user/ paths — normalise to forHandle
+    const handle = clean.startsWith('@') ? clean : '@' + clean.replace(/^(c|user)\//, '')
+    params.set('forHandle', handle)
+  }
+
+  const res = await fetch(`${BASE_URL}/channels?${params}`)
+  if (!res.ok) throw new Error(`channels.list failed: ${res.status}`)
+  const data = await res.json()
+
+  const item = data.items?.[0]
+  if (!item) throw new Error('Channel not found')
+
+  return { id: item.id, name: item.snippet.title }
+}
+
+/**
  * Fetch videos for all channels and return a flat, deduplicated list sorted
  * by publishedAt descending.
  *

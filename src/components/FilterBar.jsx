@@ -1,13 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
-import channelsData from '../data/channels.json'
 import useFeedStore from '../store/feedStore.js'
-
-// Derive sorted unique tags from all channels once at module load
-const ALL_TAGS = [...new Set(channelsData.channels.flatMap((c) => c.tags))].sort()
 
 export default function FilterBar() {
   const activeFilter = useFeedStore((s) => s.activeFilter)
   const setFilter = useFeedStore((s) => s.setFilter)
+  const channels = useFeedStore((s) => s.channels)
+  const ALL_TAGS = [...new Set(channels.flatMap((c) => c.tags))].sort()
   const [open, setOpen] = useState(false)
   const containerRef = useRef(null)
 
