@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Status
 
-**M1 ✅ M2 ✅ M3 ✅ M4 ✅** — Scaffold, data layer, and feed UI are complete. See `PRD.md` for the full milestone table.
+**M1 ✅ M2 ✅ M3 ✅ M4 ✅ M5 ✅** — Scaffold, data layer, feed UI, filters, and watch history are complete. See `PRD.md` for the full milestone table.
 
 ## Platform Target
 

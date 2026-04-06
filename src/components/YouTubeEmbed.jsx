@@ -33,19 +33,34 @@ function loadYouTubeAPI() {
  * YouTube's own UI handles that with its play button. After any gesture,
  * subsequent cards play with audio automatically.
  */
-export default function YouTubeEmbed({ videoId, isActive, preloadDelay = 0 }) {
+export default function YouTubeEmbed({
+  videoId,
+  isActive,
+  preloadDelay = 0,
+  initialTime = 0,
+  onTimeUpdate,
+}) {
   const containerRef = useRef(null)
   const playerRef = useRef(null)
   const isActiveRef = useRef(isActive)
+  const intervalRef = useRef(null)
+  const onTimeUpdateRef = useRef(onTimeUpdate)
+  const pendingSeekRef = useRef(0)
 
   useEffect(() => {
     isActiveRef.current = isActive
   }, [isActive])
 
+  useEffect(() => {
+    onTimeUpdateRef.current = onTimeUpdate
+  }, [onTimeUpdate])
+
   // Create (or recreate) the player when videoId changes
   useEffect(() => {
     let destroyed = false
     let timer = null
+
+    pendingSeekRef.current = initialTime > 0 ? initialTime : 0
 
     const create = () => loadYouTubeAPI().then(() => {
       if (destroyed || !containerRef.current) return
@@ -63,7 +78,13 @@ export default function YouTubeEmbed({ videoId, isActive, preloadDelay = 0 }) {
         events: {
           onReady: () => {
             if (destroyed) return
-            if (isActiveRef.current) player.playVideo()
+            if (isActiveRef.current) {
+              if (pendingSeekRef.current > 0) {
+                player.seekTo(pendingSeekRef.current, true)
+                pendingSeekRef.current = 0
+              }
+              player.playVideo()
+            }
           },
         },
       })
@@ -76,9 +97,15 @@ export default function YouTubeEmbed({ videoId, isActive, preloadDelay = 0 }) {
     return () => {
       destroyed = true
       clearTimeout(timer)
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
       try { playerRef.current?.destroy() } catch { /* already gone */ }
       playerRef.current = null
     }
+    // initialTime is intentionally omitted — capture-on-mount semantics only.
+    // seekTo on a non-active player triggers YouTube auto-play; pendingSeekRef
+    // defers the seek until the card actually becomes active.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoId, preloadDelay])
 
   // Play/pause when isActive changes
@@ -86,10 +113,32 @@ export default function YouTubeEmbed({ videoId, isActive, preloadDelay = 0 }) {
     const player = playerRef.current
     if (!player || typeof player.getPlayerState !== 'function') return
     if (isActive) {
+      if (pendingSeekRef.current > 0) {
+        player.seekTo(pendingSeekRef.current, true)
+        pendingSeekRef.current = 0
+      }
       const state = player.getPlayerState()
       if (state !== 1 /* not already PLAYING */) player.playVideo()
     } else {
       player.pauseVideo()
+    }
+  }, [isActive])
+
+  // Poll for time updates while active
+  useEffect(() => {
+    clearInterval(intervalRef.current)
+    intervalRef.current = null
+    if (!isActive || !onTimeUpdateRef.current) return
+    intervalRef.current = setInterval(() => {
+      const player = playerRef.current
+      if (!player || typeof player.getCurrentTime !== 'function') return
+      const currentTime = player.getCurrentTime()
+      const duration = player.getDuration()
+      if (duration > 0) onTimeUpdateRef.current(currentTime, duration)
+    }, 1000)
+    return () => {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
     }
   }, [isActive])
 

@@ -2,6 +2,8 @@ import { useRef, useEffect, useCallback } from 'react'
 import { useSwipeable } from 'react-swipeable'
 import useFeedStore from '../store/feedStore.js'
 import VideoCard from './VideoCard.jsx'
+import { useWatchHistory } from '../hooks/useWatchHistory.js'
+import { useVideoProgress } from '../hooks/useVideoProgress.js'
 
 export default function SwipeFeed() {
   const videos = useFeedStore((s) => s.videos)
@@ -14,6 +16,9 @@ export default function SwipeFeed() {
       : videos.filter((v) => v.channelTags?.includes(activeFilter))
   const incrementCursor = useFeedStore((s) => s.incrementCursor)
   const decrementCursor = useFeedStore((s) => s.decrementCursor)
+
+  const { isWatched, markStarted, markWatched } = useWatchHistory()
+  const { getProgress, saveProgress } = useVideoProgress()
 
   const containerRef = useRef(null)
   const scrollingRef = useRef(false)
@@ -137,6 +142,13 @@ export default function SwipeFeed() {
           isActive={i === cursor}
           loadPlayer={i >= cursor - 1 && i <= cursor + 2}
           preloadDelay={i === cursor || i === cursor + 1 ? 0 : 1000}
+          isWatched={isWatched(video.id)}
+          savedProgress={getProgress(video.id)}
+          onTimeUpdate={(currentTime, duration) => {
+            if (currentTime > 10) markStarted(video.id)
+            if (duration > 0 && currentTime / duration > 0.9) markWatched(video.id)
+            if (currentTime > 0) saveProgress(video.id, currentTime)
+          }}
         />
       ))}
     </div>

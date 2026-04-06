@@ -54,8 +54,13 @@ describe('VideoCard', () => {
     expect(screen.getByTestId('youtube-embed')).toBeInTheDocument()
   })
 
-  it('does not render a watched indicator (M5 concern)', () => {
+  it('does not render a watched indicator when isWatched is omitted', () => {
     render(<VideoCard video={video} isActive={false} />)
     expect(screen.queryByTestId('watched-indicator')).not.toBeInTheDocument()
+  })
+
+  it('renders a watched indicator when isWatched is true', () => {
+    render(<VideoCard video={video} isActive={false} isWatched={true} />)
+    expect(screen.getByTestId('watched-indicator')).toBeInTheDocument()
   })
 })

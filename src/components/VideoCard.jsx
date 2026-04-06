@@ -7,22 +7,58 @@ import { formatDuration, timeAgo } from '../utils/format.js'
  * loadPlayer: mount the YouTube IFrame player (true for cursor ±1, false otherwise
  * to avoid hitting the browser's WebGL context limit)
  */
-export default function VideoCard({ video, isActive, loadPlayer = true, preloadDelay = 0 }) {
+export default function VideoCard({
+  video,
+  isActive,
+  loadPlayer = true,
+  preloadDelay = 0,
+  isWatched = false,
+  savedProgress = 0,
+  onTimeUpdate,
+}) {
   const initial = video.channelName.charAt(0).toUpperCase()
 
   return (
     <article className="h-full w-full flex flex-col justify-center bg-[#0d0d0d] snap-start overflow-hidden">
-      {loadPlayer ? (
-        <YouTubeEmbed videoId={video.id} isActive={isActive} preloadDelay={preloadDelay} />
-      ) : (
-        <div className="w-full aspect-video bg-black shrink-0 overflow-hidden">
-          <img
-            src={video.thumbnailUrl}
-            alt={video.title}
-            className="w-full h-full object-cover"
+      <div className="relative w-full shrink-0">
+        {loadPlayer ? (
+          <YouTubeEmbed
+            videoId={video.id}
+            isActive={isActive}
+            preloadDelay={preloadDelay}
+            initialTime={savedProgress}
+            onTimeUpdate={onTimeUpdate}
           />
-        </div>
-      )}
+        ) : (
+          <div className="w-full aspect-video bg-black overflow-hidden">
+            <img
+              src={video.thumbnailUrl}
+              alt={video.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+        {isWatched && (
+          <div
+            data-testid="watched-indicator"
+            aria-label="Watched"
+            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/90 flex items-center justify-center pointer-events-none"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-3.5 h-3.5 text-black"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+        )}
+      </div>
 
       <div className="flex flex-col gap-2 px-4 py-3">
         {/* Channel row */}
