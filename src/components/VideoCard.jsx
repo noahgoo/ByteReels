@@ -7,13 +7,13 @@ import { formatDuration, timeAgo } from '../utils/format.js'
  * loadPlayer: mount the YouTube IFrame player (true for cursor ±1, false otherwise
  * to avoid hitting the browser's WebGL context limit)
  */
-export default function VideoCard({ video, isActive, loadPlayer = true }) {
+export default function VideoCard({ video, isActive, loadPlayer = true, preloadDelay = 0 }) {
   const initial = video.channelName.charAt(0).toUpperCase()
 
   return (
     <article className="h-full w-full flex flex-col justify-center bg-[#0d0d0d] snap-start overflow-hidden">
       {loadPlayer ? (
-        <YouTubeEmbed videoId={video.id} isActive={isActive} />
+        <YouTubeEmbed videoId={video.id} isActive={isActive} preloadDelay={preloadDelay} />
       ) : (
         <div className="w-full aspect-video bg-black shrink-0 overflow-hidden">
           <img

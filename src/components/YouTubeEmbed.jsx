@@ -23,48 +23,17 @@ function loadYouTubeAPI() {
   })
 }
 
-// ─── One-time gesture gate ────────────────────────────────────────────────────
-// Browsers block unmuted autoplay until the user has tapped/clicked once.
-// After that first gesture we unmute the active player and all future cards
-// play with sound automatically.
-
-let userHasGestured = false
-const pendingUnmuteCallbacks = new Set()
-
-function recordGesture() {
-  userHasGestured = true
-  pendingUnmuteCallbacks.forEach((cb) => cb())
-  pendingUnmuteCallbacks.clear()
-}
-document.addEventListener('pointerdown', recordGesture, { once: true })
-
-/**
- * Unmute the player immediately if the user has already gestured,
- * otherwise queue it for when they do.
- * Returns a cleanup function that cancels the pending callback.
- */
-function unmuteWhenReady(player) {
-  if (userHasGestured) {
-    player.unMute()
-    player.setVolume(100)
-    return () => {}
-  }
-  const cb = () => {
-    player.unMute?.()
-    player.setVolume?.(100)
-  }
-  pendingUnmuteCallbacks.add(cb)
-  return () => { pendingUnmuteCallbacks.delete(cb) }
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 /**
  * Controlled YouTube IFrame embed.
- * Plays when isActive=true, pauses when isActive=false.
- * Starts muted; unmutes automatically after the user's first tap anywhere.
+ *
+ * Audio strategy: mute:0 so YouTube loads audio+video streams from the start.
+ * On iOS Safari the first playVideo() call may be blocked until a user gesture;
+ * YouTube's own UI handles that with its play button. After any gesture,
+ * subsequent cards play with audio automatically.
  */
-export default function YouTubeEmbed({ videoId, isActive }) {
+export default function YouTubeEmbed({ videoId, isActive, preloadDelay = 0 }) {
   const containerRef = useRef(null)
   const playerRef = useRef(null)
   const isActiveRef = useRef(isActive)
@@ -76,16 +45,16 @@ export default function YouTubeEmbed({ videoId, isActive }) {
   // Create (or recreate) the player when videoId changes
   useEffect(() => {
     let destroyed = false
-    let cleanupUnmute = () => {}
+    let timer = null
 
-    loadYouTubeAPI().then(() => {
+    const create = () => loadYouTubeAPI().then(() => {
       if (destroyed || !containerRef.current) return
 
       const player = new window.YT.Player(containerRef.current, {
         videoId,
         playerVars: {
           autoplay: 0,
-          mute: 1,
+          mute: 0,
           controls: 1,
           modestbranding: 1,
           rel: 0,
@@ -96,34 +65,29 @@ export default function YouTubeEmbed({ videoId, isActive }) {
             if (destroyed) return
             if (isActiveRef.current) player.playVideo()
           },
-          onStateChange: (e) => {
-            // Only unmute once the video is actually playing — not while buffering.
-            // This prevents audio playing over a loading spinner on fast swipes.
-            if (!destroyed && e.data === window.YT.PlayerState.PLAYING) {
-              cleanupUnmute()
-              cleanupUnmute = unmuteWhenReady(player)
-            }
-          },
         },
       })
 
       playerRef.current = player
     })
 
+    timer = setTimeout(create, preloadDelay)
+
     return () => {
       destroyed = true
-      cleanupUnmute()
+      clearTimeout(timer)
       try { playerRef.current?.destroy() } catch { /* already gone */ }
       playerRef.current = null
     }
-  }, [videoId])
+  }, [videoId, preloadDelay])
 
-  // Play/pause when isActive changes — unmuting is handled by onStateChange
+  // Play/pause when isActive changes
   useEffect(() => {
     const player = playerRef.current
     if (!player || typeof player.getPlayerState !== 'function') return
     if (isActive) {
-      player.playVideo()
+      const state = player.getPlayerState()
+      if (state !== 1 /* not already PLAYING */) player.playVideo()
     } else {
       player.pauseVideo()
     }

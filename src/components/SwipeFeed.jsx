@@ -135,7 +135,8 @@ export default function SwipeFeed() {
           key={video.id}
           video={video}
           isActive={i === cursor}
-          loadPlayer={Math.abs(i - cursor) <= 1}
+          loadPlayer={i >= cursor - 1 && i <= cursor + 2}
+          preloadDelay={i === cursor || i === cursor + 1 ? 0 : 1000}
         />
       ))}
     </div>

@@ -111,8 +111,9 @@ Two routes only: `/` (feed) and `/settings`. No complex routing needed.
 - `window.onYouTubeIframeAPIReady` must be assigned at **module evaluation time**, not inside `useEffect` — there is a race where the script fires the callback before the effect runs.
 - `YT.Player` **replaces** the target DOM node with an IFrame. Always point it at a plain `<div ref>` with no React children and never re-render that div after the player is created.
 - **Autoplay is blocked** by Chrome and Safari unless the video is muted. Always set `mute: 1` in `playerVars` and unmute programmatically after a user gesture.
-- **Unmute only in `onStateChange`** when `e.data === YT.PlayerState.PLAYING` (1) — not in `onReady` or the `isActive` effect. Unmuting earlier causes audio to play over the loading spinner on slow connections or fast swipes.
-- **WebGL context limit:** browsers cap active WebGL contexts at ~16. Each `YT.Player` instance creates one. Only mount players for cards at `cursor ±1` — pass `loadPlayer={Math.abs(i - cursor) <= 1}` from `SwipeFeed` and render a thumbnail `<img>` fallback in `VideoCard` when `loadPlayer=false`.
+- **YouTube DASH streaming + mute:** When a player starts with `mute: 1`, YouTube's CDN skips loading the audio track entirely to save bandwidth. Calling `unMute()` later — regardless of where or how — forces YouTube to fetch the audio stream from scratch, causing a full rebuffer (~10s). Use `mute: 0` so both streams load from the start; accept that the first video may require a tap on iOS Safari.
+- **Stagger preload player creation:** Creating multiple `YT.Player` instances simultaneously causes bandwidth competition — the furthest preloaded card gets the least bandwidth and is poorly buffered when the user swipes there. Active and +1 cards should initialize immediately (`preloadDelay=0`); cards further ahead should delay by ~1s (`preloadDelay=1000`) so the active video has bandwidth priority.
+- **WebGL context limit:** browsers cap active WebGL contexts at ~16. Each `YT.Player` instance creates one. Current window: `cursor-1` to `cursor+2` (4 players). Render a thumbnail `<img>` fallback in `VideoCard` when `loadPlayer=false`.
 
 ## Key Files
 

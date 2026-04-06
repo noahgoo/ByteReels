@@ -44,14 +44,14 @@ function Feed() {
   }
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-[#0d0d0d]">
+    <div className="flex flex-col h-dvh bg-[#0d0d0d]">
       <header className="shrink-0 px-4 py-2 flex items-center bg-[#0d0d0d]/80 backdrop-blur-sm z-10">
         <span className="text-white font-bold tracking-tight text-lg">ByteReels</span>
         <button
           onClick={handleRefresh}
           disabled={isRefreshing}
           aria-label="Refresh feed"
-          className="ml-auto flex items-center justify-center min-h-[44px] min-w-[44px] text-white/60 hover:text-white active:text-white disabled:opacity-40 transition-colors"
+          className="ml-auto flex items-center justify-center min-h-11 min-w-11 text-white/60 hover:text-white active:text-white disabled:opacity-40 transition-colors"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
