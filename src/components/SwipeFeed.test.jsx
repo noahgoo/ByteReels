@@ -33,8 +33,8 @@ beforeEach(() => {
 
 describe('SwipeFeed', () => {
   it('renders a loading state when videos is empty', () => {
-    render(<SwipeFeed />)
-    expect(screen.getByText(/loading/i)).toBeInTheDocument()
+    render(<SwipeFeed isLoading={true} />)
+    expect(screen.getByTestId('loading-skeleton')).toBeInTheDocument()
   })
 
   it('renders a card for each video', () => {

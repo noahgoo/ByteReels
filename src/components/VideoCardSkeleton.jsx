@@ -1,6 +1,6 @@
 export default function VideoCardSkeleton() {
   return (
-    <div className="h-full w-full flex flex-col justify-center bg-[#0d0d0d] snap-start overflow-hidden animate-pulse">
+    <div data-testid="loading-skeleton" className="h-full w-full flex flex-col justify-center bg-[#0d0d0d] snap-start overflow-hidden animate-pulse">
       {/* Video area */}
       <div className="w-full aspect-video bg-zinc-800 shrink-0" />
 
