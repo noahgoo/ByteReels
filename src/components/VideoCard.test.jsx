@@ -1,10 +1,17 @@
 import { describe, it, expect, vi } from 'vitest'
+import { forwardRef, useImperativeHandle } from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import VideoCard from './VideoCard.jsx'
 import { formatDuration, timeAgo } from '../utils/format.js'
 
+// forwardRef mock so VideoCard can attach embedRef without React warnings.
+// Exposes a seekBy spy so skip-button tests can assert it was called.
+const seekBySpy = vi.fn()
 vi.mock('./YouTubeEmbed.jsx', () => ({
-  default: () => <div data-testid="youtube-embed" />,
+  default: forwardRef((_props, ref) => {
+    useImperativeHandle(ref, () => ({ seekBy: seekBySpy }), [])
+    return <div data-testid="youtube-embed" />
+  }),
 }))
 
 const video = {
@@ -36,7 +43,6 @@ describe('VideoCard', () => {
 
   it('renders the relative time', () => {
     render(<VideoCard video={video} isActive={false} />)
-    // timeAgo uses real Date.now() — just assert something truthy is rendered
     const expected = timeAgo(video.publishedAt)
     expect(screen.getByText(new RegExp(expected))).toBeInTheDocument()
   })
@@ -79,5 +85,31 @@ describe('VideoCard', () => {
     render(<VideoCard video={video} isActive={false} onNotInterested={handler} />)
     fireEvent.click(screen.getByRole('button', { name: /not interested/i }))
     expect(handler).toHaveBeenCalledOnce()
+  })
+
+  it('does not render skip buttons when isActive is false', () => {
+    render(<VideoCard video={video} isActive={false} />)
+    expect(screen.queryByRole('button', { name: /skip back/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /skip forward/i })).not.toBeInTheDocument()
+  })
+
+  it('renders skip back and skip forward buttons when isActive is true', () => {
+    render(<VideoCard video={video} isActive={true} />)
+    expect(screen.getByRole('button', { name: /skip back 15/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /skip forward 15/i })).toBeInTheDocument()
+  })
+
+  it('calls seekBy(-15) when skip back is clicked', () => {
+    seekBySpy.mockClear()
+    render(<VideoCard video={video} isActive={true} />)
+    fireEvent.click(screen.getByRole('button', { name: /skip back 15/i }))
+    expect(seekBySpy).toHaveBeenCalledWith(-15)
+  })
+
+  it('calls seekBy(15) when skip forward is clicked', () => {
+    seekBySpy.mockClear()
+    render(<VideoCard video={video} isActive={true} />)
+    fireEvent.click(screen.getByRole('button', { name: /skip forward 15/i }))
+    expect(seekBySpy).toHaveBeenCalledWith(15)
   })
 })

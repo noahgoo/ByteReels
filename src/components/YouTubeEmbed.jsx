@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, forwardRef, useImperativeHandle } from 'react'
 
 // ─── YouTube IFrame API singleton ─────────────────────────────────────────────
 
@@ -35,7 +35,7 @@ function loadYouTubeAPI() {
  * until a user gesture — the overlay makes this explicit and handles playback.
  * After the first tap, all subsequent cards auto-play (gestureEstablished=true).
  */
-export default function YouTubeEmbed({
+const YouTubeEmbed = forwardRef(function YouTubeEmbed({
   videoId,
   isActive,
   preloadDelay = 0,
@@ -43,7 +43,7 @@ export default function YouTubeEmbed({
   onTimeUpdate,
   gestureEstablished = false,
   onFirstGesture,
-}) {
+}, ref) {
   const containerRef = useRef(null)
   const playerRef = useRef(null)
   const isActiveRef = useRef(isActive)
@@ -51,6 +51,15 @@ export default function YouTubeEmbed({
   const intervalRef = useRef(null)
   const onTimeUpdateRef = useRef(onTimeUpdate)
   const pendingSeekRef = useRef(0)
+
+  useImperativeHandle(ref, () => ({
+    seekBy(seconds) {
+      const player = playerRef.current
+      if (!player || typeof player.getCurrentTime !== 'function') return
+      const newTime = Math.max(0, player.getCurrentTime() + seconds)
+      player.seekTo(newTime, true)
+    },
+  }), [])
 
   useEffect(() => {
     isActiveRef.current = isActive
@@ -187,4 +196,6 @@ export default function YouTubeEmbed({
       )}
     </div>
   )
-}
+})
+
+export default YouTubeEmbed
