@@ -44,7 +44,14 @@ export default function SwipeFeed({ isLoading = false }) {
   const filteredKey = filtered.map((v) => v.id).join(',')
   const sortKeyRef = useRef(null)
   const displayedRef = useRef([])
-  const sortKey = `${filteredKey}|${cursor}`
+  // Sort key is based only on the video list — NOT cursor. This means the sort
+  // recomputes when videos are added/hidden/filtered, but NOT when the user
+  // swipes. Excluding cursor prevents two bugs:
+  //   1. Mid-playback jump: sort would fire at 90% and move the active card.
+  //   2. Double-skip: sort fires on swipe, indices shift, cursor lands two ahead.
+  // Previously-watched videos are sorted to the bottom on load (from localStorage).
+  // Videos watched in the current session sink to the bottom on the next refresh.
+  const sortKey = filteredKey
   if (sortKeyRef.current !== sortKey) {
     sortKeyRef.current = sortKey
     displayedRef.current = [...filtered].sort((a, b) => {
