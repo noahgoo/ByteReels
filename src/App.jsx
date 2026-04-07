@@ -13,6 +13,7 @@ import FilterBar from "./components/FilterBar.jsx";
 import InstallBanner from "./components/InstallBanner.jsx";
 import { useWatchHistory } from "./hooks/useWatchHistory.js";
 import { useVideoProgress } from "./hooks/useVideoProgress.js";
+import { useHiddenVideos } from "./hooks/useHiddenVideos.js";
 import useOnlineStatus from "./hooks/useOnlineStatus.js";
 import { Analytics } from "@vercel/analytics/react";
 
@@ -214,11 +215,13 @@ function Settings() {
   const removeChannel = useFeedStore((s) => s.removeChannel);
   const { clearHistory } = useWatchHistory();
   const { clearProgress } = useVideoProgress();
+  const { clearHidden } = useHiddenVideos();
   const [cleared, setCleared] = useState(false);
 
   function handleClear() {
     clearHistory();
     clearProgress();
+    clearHidden();
     setCleared(true);
   }
 

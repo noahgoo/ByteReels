@@ -4,9 +4,14 @@ import SwipeFeed from './SwipeFeed.jsx'
 import useFeedStore from '../store/feedStore.js'
 
 vi.mock('./VideoCard.jsx', () => ({
-  default: ({ video, isActive }) => (
+  default: ({ video, isActive, onNotInterested }) => (
     <div data-testid="video-card" data-active={String(isActive)}>
       {video.title}
+      {onNotInterested && (
+        <button data-testid="not-interested" onClick={onNotInterested}>
+          Not interested
+        </button>
+      )}
     </div>
   ),
 }))
@@ -28,6 +33,7 @@ const makeVideo = (n) => ({
 })
 
 beforeEach(() => {
+  localStorage.clear()
   useFeedStore.setState(useFeedStore.getInitialState())
 })
 
@@ -85,6 +91,43 @@ describe('SwipeFeed', () => {
     useFeedStore.setState({ videos: [makeVideo(1), makeVideo(2)], cursor: 0 })
     render(<SwipeFeed />)
     fireEvent.keyDown(window, { key: 'ArrowUp' })
+    expect(useFeedStore.getState().cursor).toBe(0)
+  })
+
+  it('does not render videos marked as hidden', () => {
+    localStorage.setItem('bytereels_hidden', JSON.stringify({ v1: true }))
+    useFeedStore.setState({ videos: [makeVideo(1), makeVideo(2)] })
+    render(<SwipeFeed />)
+    const cards = screen.getAllByTestId('video-card')
+    expect(cards).toHaveLength(1)
+    expect(cards[0]).toHaveTextContent('Video 2')
+  })
+
+  it('renders watched videos after unwatched videos', () => {
+    localStorage.setItem('watchHistory', JSON.stringify({ v1: { watched: true } }))
+    useFeedStore.setState({ videos: [makeVideo(1), makeVideo(2), makeVideo(3)] })
+    render(<SwipeFeed />)
+    const cards = screen.getAllByTestId('video-card')
+    // v1 is watched → sorted to last
+    expect(cards[0]).toHaveTextContent('Video 2')
+    expect(cards[1]).toHaveTextContent('Video 3')
+    expect(cards[2]).toHaveTextContent('Video 1')
+  })
+
+  it('clicking Not Interested removes the video from the feed', () => {
+    useFeedStore.setState({ videos: [makeVideo(1), makeVideo(2)], cursor: 0 })
+    render(<SwipeFeed />)
+    fireEvent.click(screen.getAllByTestId('not-interested')[0])
+    const cards = screen.getAllByTestId('video-card')
+    expect(cards).toHaveLength(1)
+    expect(cards[0]).toHaveTextContent('Video 2')
+  })
+
+  it('Not Interested on the last card clamps cursor down', () => {
+    useFeedStore.setState({ videos: [makeVideo(1), makeVideo(2)], cursor: 1 })
+    render(<SwipeFeed />)
+    // click not-interested on the second card (index 1, which is cursor)
+    fireEvent.click(screen.getAllByTestId('not-interested')[1])
     expect(useFeedStore.getState().cursor).toBe(0)
   })
 })

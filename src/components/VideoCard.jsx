@@ -17,6 +17,7 @@ export default function VideoCard({
   onTimeUpdate,
   gestureEstablished = false,
   onFirstGesture,
+  onNotInterested,
 }) {
   const initial = video.channelName.charAt(0).toUpperCase()
 
@@ -100,6 +101,15 @@ export default function VideoCard({
             </li>
           ))}
         </ul>
+
+        {onNotInterested && (
+          <button
+            onClick={onNotInterested}
+            className="self-start text-neutral-600 hover:text-neutral-400 active:text-neutral-400 text-xs transition-colors min-h-[44px] flex items-center"
+          >
+            Not interested
+          </button>
+        )}
       </div>
     </article>
   )

@@ -6,6 +6,7 @@ import VideoCard from './VideoCard.jsx'
 import VideoCardSkeleton from './VideoCardSkeleton.jsx'
 import { useWatchHistory } from '../hooks/useWatchHistory.js'
 import { useVideoProgress } from '../hooks/useVideoProgress.js'
+import { useHiddenVideos } from '../hooks/useHiddenVideos.js'
 
 function EmptyState({ icon, title, subtitle, action }) {
   return (
@@ -25,15 +26,35 @@ export default function SwipeFeed({ isLoading = false }) {
   const channels = useFeedStore((s) => s.channels)
   const setFilter = useFeedStore((s) => s.setFilter)
 
-  const filteredVideos =
-    activeFilter === 'all'
-      ? videos
-      : videos.filter((v) => v.channelTags?.includes(activeFilter))
   const incrementCursor = useFeedStore((s) => s.incrementCursor)
   const decrementCursor = useFeedStore((s) => s.decrementCursor)
 
   const { isWatched, markStarted, markWatched } = useWatchHistory()
   const { getProgress, saveProgress } = useVideoProgress()
+  const { isHidden, markHidden } = useHiddenVideos()
+
+  // Step 1: tag filter + exclude hidden videos (reactive — updates immediately on hide)
+  const filtered = (activeFilter === 'all' ? videos : videos.filter((v) => v.channelTags?.includes(activeFilter)))
+    .filter((v) => !isHidden(v.id))
+
+  // Step 2: stable sort — only recomputes when the video set or cursor changes,
+  // NOT when isWatched changes mid-playback (prevents the feed jumping when
+  // a video hits 90% completion while the user is still watching it).
+  // The sort picks up the latest watch state the next time the cursor moves.
+  const filteredKey = filtered.map((v) => v.id).join(',')
+  const sortKeyRef = useRef(null)
+  const displayedRef = useRef([])
+  const sortKey = `${filteredKey}|${cursor}`
+  if (sortKeyRef.current !== sortKey) {
+    sortKeyRef.current = sortKey
+    displayedRef.current = [...filtered].sort((a, b) => {
+      const aW = isWatched(a.id)
+      const bW = isWatched(b.id)
+      if (aW === bW) return 0
+      return aW ? 1 : -1
+    })
+  }
+  const displayedVideos = displayedRef.current
 
   const [gestureEstablished, setGestureEstablished] = useState(false)
 
@@ -109,7 +130,7 @@ export default function SwipeFeed({ isLoading = false }) {
   // ─── IntersectionObserver — keep cursor in sync on manual scroll ─────────────
   useEffect(() => {
     const container = containerRef.current
-    if (!container || filteredVideos.length === 0) return
+    if (!container || displayedVideos.length === 0) return
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -127,7 +148,7 @@ export default function SwipeFeed({ isLoading = false }) {
 
     Array.from(container.children).forEach((child) => observer.observe(child))
     return () => observer.disconnect()
-  }, [filteredVideos])
+  }, [displayedVideos])
 
   // ─── Loading state ───────────────────────────────────────────────────────────
   if (isLoading && videos.length === 0) {
@@ -157,7 +178,7 @@ export default function SwipeFeed({ isLoading = false }) {
     )
   }
 
-  if (filteredVideos.length === 0 && activeFilter !== 'all') {
+  if (displayedVideos.length === 0 && activeFilter !== 'all') {
     return (
       <EmptyState
         icon="🔍"
@@ -175,7 +196,7 @@ export default function SwipeFeed({ isLoading = false }) {
     )
   }
 
-  if (filteredVideos.length === 0) {
+  if (displayedVideos.length === 0) {
     return (
       <EmptyState
         icon="🎬"
@@ -185,13 +206,22 @@ export default function SwipeFeed({ isLoading = false }) {
     )
   }
 
+  function handleNotInterested(videoId) {
+    // If hiding the last card, step cursor back so we don't land on a blank slot
+    const newLen = displayedVideos.length - 1
+    if (cursor >= newLen && newLen > 0) {
+      useFeedStore.setState({ cursor: newLen - 1 })
+    }
+    markHidden(videoId)
+  }
+
   return (
     <div
       ref={mergedRef}
       className="h-full overflow-y-scroll snap-y snap-mandatory [&::-webkit-scrollbar]:hidden"
       style={{ scrollbarWidth: 'none' }}
     >
-      {filteredVideos.map((video, i) => (
+      {displayedVideos.map((video, i) => (
         <VideoCard
           key={video.id}
           video={video}
@@ -202,6 +232,7 @@ export default function SwipeFeed({ isLoading = false }) {
           savedProgress={getProgress(video.id)}
           gestureEstablished={gestureEstablished}
           onFirstGesture={() => setGestureEstablished(true)}
+          onNotInterested={() => handleNotInterested(video.id)}
           onTimeUpdate={(currentTime, duration) => {
             if (currentTime > 10) markStarted(video.id)
             if (duration > 0 && currentTime / duration > 0.9) markWatched(video.id)
