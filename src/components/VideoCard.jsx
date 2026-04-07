@@ -15,6 +15,8 @@ export default function VideoCard({
   isWatched = false,
   savedProgress = 0,
   onTimeUpdate,
+  gestureEstablished = false,
+  onFirstGesture,
 }) {
   const initial = video.channelName.charAt(0).toUpperCase()
 
@@ -28,6 +30,8 @@ export default function VideoCard({
             preloadDelay={preloadDelay}
             initialTime={savedProgress}
             onTimeUpdate={onTimeUpdate}
+            gestureEstablished={gestureEstablished}
+            onFirstGesture={onFirstGesture}
           />
         ) : (
           <div className="w-full aspect-video bg-black overflow-hidden">

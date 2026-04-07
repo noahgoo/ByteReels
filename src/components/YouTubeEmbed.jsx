@@ -29,9 +29,11 @@ function loadYouTubeAPI() {
  * Controlled YouTube IFrame embed.
  *
  * Audio strategy: mute:0 so YouTube loads audio+video streams from the start.
- * On iOS Safari the first playVideo() call may be blocked until a user gesture;
- * YouTube's own UI handles that with its play button. After any gesture,
- * subsequent cards play with audio automatically.
+ *
+ * Tap-to-play overlay: shown on the active card until the user has established
+ * a gesture (gestureEstablished=false). On iOS Safari, playVideo() is blocked
+ * until a user gesture — the overlay makes this explicit and handles playback.
+ * After the first tap, all subsequent cards auto-play (gestureEstablished=true).
  */
 export default function YouTubeEmbed({
   videoId,
@@ -39,10 +41,13 @@ export default function YouTubeEmbed({
   preloadDelay = 0,
   initialTime = 0,
   onTimeUpdate,
+  gestureEstablished = false,
+  onFirstGesture,
 }) {
   const containerRef = useRef(null)
   const playerRef = useRef(null)
   const isActiveRef = useRef(isActive)
+  const gestureEstablishedRef = useRef(gestureEstablished)
   const intervalRef = useRef(null)
   const onTimeUpdateRef = useRef(onTimeUpdate)
   const pendingSeekRef = useRef(0)
@@ -50,6 +55,10 @@ export default function YouTubeEmbed({
   useEffect(() => {
     isActiveRef.current = isActive
   }, [isActive])
+
+  useEffect(() => {
+    gestureEstablishedRef.current = gestureEstablished
+  }, [gestureEstablished])
 
   useEffect(() => {
     onTimeUpdateRef.current = onTimeUpdate
@@ -78,7 +87,7 @@ export default function YouTubeEmbed({
         events: {
           onReady: () => {
             if (destroyed) return
-            if (isActiveRef.current) {
+            if (isActiveRef.current && gestureEstablishedRef.current) {
               if (pendingSeekRef.current > 0) {
                 player.seekTo(pendingSeekRef.current, true)
                 pendingSeekRef.current = 0
@@ -103,8 +112,6 @@ export default function YouTubeEmbed({
       playerRef.current = null
     }
     // initialTime is intentionally omitted — capture-on-mount semantics only.
-    // seekTo on a non-active player triggers YouTube auto-play; pendingSeekRef
-    // defers the seek until the card actually becomes active.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoId, preloadDelay])
 
@@ -117,8 +124,11 @@ export default function YouTubeEmbed({
         player.seekTo(pendingSeekRef.current, true)
         pendingSeekRef.current = 0
       }
-      const state = player.getPlayerState()
-      if (state !== 1 /* not already PLAYING */) player.playVideo()
+      if (gestureEstablishedRef.current) {
+        const state = player.getPlayerState()
+        if (state !== 1 /* not already PLAYING */) player.playVideo()
+      }
+      // if gesture not established: overlay is shown, tap will call playVideo
     } else {
       player.pauseVideo()
     }
@@ -142,9 +152,39 @@ export default function YouTubeEmbed({
     }
   }, [isActive])
 
+  function handleOverlayTap() {
+    onFirstGesture?.()
+    const player = playerRef.current
+    if (!player || typeof player.playVideo !== 'function') return
+    if (pendingSeekRef.current > 0) {
+      player.seekTo(pendingSeekRef.current, true)
+      pendingSeekRef.current = 0
+    }
+    player.playVideo()
+  }
+
   return (
-    <div className="w-full aspect-video bg-black shrink-0">
+    <div className="w-full aspect-video bg-black shrink-0 relative">
       <div ref={containerRef} className="w-full h-full" />
+      {isActive && !gestureEstablished && (
+        <button
+          onClick={handleOverlayTap}
+          aria-label="Tap to play"
+          className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 z-10 cursor-pointer w-full h-full"
+        >
+          <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="white"
+              className="w-7 h-7 translate-x-0.5"
+            >
+              <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+          </div>
+          <p className="text-white/80 text-sm mt-3 font-medium">Tap to play</p>
+        </button>
+      )}
     </div>
   )
 }

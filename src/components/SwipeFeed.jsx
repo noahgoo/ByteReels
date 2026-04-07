@@ -1,14 +1,29 @@
-import { useRef, useEffect, useCallback } from 'react'
+import { useRef, useEffect, useCallback, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useSwipeable } from 'react-swipeable'
 import useFeedStore from '../store/feedStore.js'
 import VideoCard from './VideoCard.jsx'
+import VideoCardSkeleton from './VideoCardSkeleton.jsx'
 import { useWatchHistory } from '../hooks/useWatchHistory.js'
 import { useVideoProgress } from '../hooks/useVideoProgress.js'
 
-export default function SwipeFeed() {
+function EmptyState({ icon, title, subtitle, action }) {
+  return (
+    <div className="h-full flex flex-col items-center justify-center gap-3 px-8 text-center">
+      <div className="text-4xl select-none">{icon}</div>
+      <p className="text-white text-base font-semibold">{title}</p>
+      {subtitle && <p className="text-neutral-500 text-sm">{subtitle}</p>}
+      {action}
+    </div>
+  )
+}
+
+export default function SwipeFeed({ isLoading = false }) {
   const videos = useFeedStore((s) => s.videos)
   const activeFilter = useFeedStore((s) => s.activeFilter)
   const cursor = useFeedStore((s) => s.cursor)
+  const channels = useFeedStore((s) => s.channels)
+  const setFilter = useFeedStore((s) => s.setFilter)
 
   const filteredVideos =
     activeFilter === 'all'
@@ -19,6 +34,8 @@ export default function SwipeFeed() {
 
   const { isWatched, markStarted, markWatched } = useWatchHistory()
   const { getProgress, saveProgress } = useVideoProgress()
+
+  const [gestureEstablished, setGestureEstablished] = useState(false)
 
   const containerRef = useRef(null)
   const scrollingRef = useRef(false)
@@ -112,20 +129,59 @@ export default function SwipeFeed() {
     return () => observer.disconnect()
   }, [filteredVideos])
 
-  // ─── Loading / empty state ───────────────────────────────────────────────────
-  if (videos.length === 0) {
+  // ─── Loading state ───────────────────────────────────────────────────────────
+  if (isLoading && videos.length === 0) {
     return (
-      <div className="h-full flex items-center justify-center text-neutral-500 text-sm">
-        Loading videos…
+      <div className="h-full overflow-hidden">
+        <VideoCardSkeleton />
       </div>
+    )
+  }
+
+  // ─── Empty states ────────────────────────────────────────────────────────────
+  if (!isLoading && channels.length === 0) {
+    return (
+      <EmptyState
+        icon="📺"
+        title="No channels yet"
+        subtitle="Add a channel in Settings to start your feed."
+        action={
+          <Link
+            to="/settings"
+            className="mt-1 min-h-11 px-5 flex items-center rounded-xl bg-white text-[#0d0d0d] text-sm font-semibold active:opacity-70 transition-opacity"
+          >
+            Go to Settings
+          </Link>
+        }
+      />
+    )
+  }
+
+  if (filteredVideos.length === 0 && activeFilter !== 'all') {
+    return (
+      <EmptyState
+        icon="🔍"
+        title={`No videos tagged "${activeFilter}"`}
+        subtitle="Try a different filter or add more channels."
+        action={
+          <button
+            onClick={() => setFilter('all')}
+            className="mt-1 min-h-11 px-5 rounded-xl bg-neutral-800 text-white text-sm font-medium active:opacity-70 transition-opacity"
+          >
+            Show all
+          </button>
+        }
+      />
     )
   }
 
   if (filteredVideos.length === 0) {
     return (
-      <div className="h-full flex items-center justify-center text-neutral-500 text-sm">
-        No videos for &ldquo;{activeFilter}&rdquo;
-      </div>
+      <EmptyState
+        icon="🎬"
+        title="No videos loaded"
+        subtitle="Pull to refresh or check your channel list."
+      />
     )
   }
 
@@ -144,6 +200,8 @@ export default function SwipeFeed() {
           preloadDelay={i === cursor || i === cursor + 1 ? 0 : 1000}
           isWatched={isWatched(video.id)}
           savedProgress={getProgress(video.id)}
+          gestureEstablished={gestureEstablished}
+          onFirstGesture={() => setGestureEstablished(true)}
           onTimeUpdate={(currentTime, duration) => {
             if (currentTime > 10) markStarted(video.id)
             if (duration > 0 && currentTime / duration > 0.9) markWatched(video.id)
