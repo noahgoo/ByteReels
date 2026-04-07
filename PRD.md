@@ -322,7 +322,7 @@ bytereels/
 | **M3 — Feed UI** ✅ | `SwipeFeed`, `VideoCard`, `YouTubeEmbed`, swipe gestures, IntersectionObserver autoplay |
 | **M4 — Filters** ✅ | `FilterBar`, tag chip logic, filter persistence |
 | **M5 — History** ✅ | Watch history tracking, progress save/restore, history clear in settings |
-| **M6 — Polish** | Offline banner, loading skeletons, empty states, Lighthouse audit (mobile), icons; **iOS autoplay tap-to-play overlay**; iOS "Add to Home Screen" install banner |
+| **M6 — Polish** ✅  | Offline banner, loading skeletons, empty states, Lighthouse audit (mobile), icons; **iOS autoplay tap-to-play overlay**; iOS "Add to Home Screen" install banner |
 
 ---
 
