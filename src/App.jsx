@@ -61,7 +61,7 @@ function Feed() {
 
   return (
     <div className="flex flex-col h-dvh bg-[#0d0d0d]">
-      <header className="shrink-0 px-4 py-2 flex items-center bg-[#0d0d0d]/80 backdrop-blur-sm z-10">
+      <header className="shrink-0 px-4 pb-2 pt-[max(env(safe-area-inset-top),_0.5rem)] flex items-center bg-[#0d0d0d]/80 backdrop-blur-sm z-10">
         <span className="text-white font-bold tracking-tight text-lg">
           ByteReels
         </span>
