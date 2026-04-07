@@ -227,7 +227,7 @@ function Settings() {
 
   return (
     <div className="min-h-dvh bg-[#0d0d0d] text-white flex flex-col">
-      <header className="shrink-0 px-4 py-2 flex items-center gap-3 bg-[#0d0d0d]/80 backdrop-blur-sm">
+      <header className="shrink-0 px-4 pb-2 pt-[max(env(safe-area-inset-top),_0.5rem)] flex items-center gap-3 bg-[#0d0d0d]/80 backdrop-blur-sm">
         <Link
           to="/"
           aria-label="Back to feed"
