@@ -107,18 +107,18 @@ export default function VideoCard({
 
       {/* Skip controls — only on active card */}
       {isActive && (
-        <div className="absolute bottom-5 left-0 right-0 flex items-center justify-center gap-4 z-20 pointer-events-none">
+        <div className="absolute bottom-10 left-0 right-0 flex items-center justify-center gap-10 z-20 pointer-events-none">
           <button
             onClick={() => embedRef.current?.seekBy(-15)}
             aria-label="Skip back 15 seconds"
-            className="pointer-events-auto bg-orange-500 active:bg-orange-400 text-white text-sm font-semibold px-7 py-3 rounded-full transition-colors shadow-lg"
+            className="pointer-events-auto bg-sky-400 active:bg-sky-300 text-white text-md font-semibold px-14 py-3 rounded-full transition-colors shadow-lg"
           >
             −15s
           </button>
           <button
             onClick={() => embedRef.current?.seekBy(15)}
             aria-label="Skip forward 15 seconds"
-            className="pointer-events-auto bg-orange-500 active:bg-orange-400 text-white text-sm font-semibold px-7 py-3 rounded-full transition-colors shadow-lg"
+            className="pointer-events-auto bg-sky-400 active:bg-sky-300 text-white text-md font-semibold px-14 py-3 rounded-full transition-colors shadow-lg"
           >
             +15s
           </button>
