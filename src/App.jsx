@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import useFeedStore from "./store/feedStore.js";
 import { loadPersistedFilter } from "./store/feedStore.js";
@@ -28,6 +28,7 @@ function Feed() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const isOnline = useOnlineStatus();
+  const notInterestedRef = useRef(null);
 
   // Restore active filter from localStorage on mount
   useEffect(() => {
@@ -120,10 +121,18 @@ function Feed() {
         </div>
       )}
 
-      <FilterBar />
+      <div className="shrink-0 flex items-center pr-4">
+        <FilterBar />
+        <button
+          onClick={() => notInterestedRef.current?.()}
+          className="ml-auto shrink-0 border border-neutral-700 text-neutral-400 hover:text-neutral-200 hover:border-neutral-500 active:text-neutral-200 text-xs px-3 py-1.5 rounded-full transition-colors"
+        >
+          Not interested
+        </button>
+      </div>
 
       <main className="flex-1 overflow-hidden">
-        <SwipeFeed isLoading={isInitialLoad} />
+        <SwipeFeed isLoading={isInitialLoad} onNotInterestedRef={notInterestedRef} />
       </main>
     </div>
   );

@@ -70,23 +70,6 @@ describe('VideoCard', () => {
     expect(screen.getByTestId('watched-indicator')).toBeInTheDocument()
   })
 
-  it('does not render Not Interested button when onNotInterested is omitted', () => {
-    render(<VideoCard video={video} isActive={false} />)
-    expect(screen.queryByRole('button', { name: /not interested/i })).not.toBeInTheDocument()
-  })
-
-  it('renders Not Interested button when onNotInterested is provided', () => {
-    render(<VideoCard video={video} isActive={false} onNotInterested={() => {}} />)
-    expect(screen.getByRole('button', { name: /not interested/i })).toBeInTheDocument()
-  })
-
-  it('calls onNotInterested when the button is clicked', () => {
-    const handler = vi.fn()
-    render(<VideoCard video={video} isActive={false} onNotInterested={handler} />)
-    fireEvent.click(screen.getByRole('button', { name: /not interested/i }))
-    expect(handler).toHaveBeenCalledOnce()
-  })
-
   it('does not render skip buttons when isActive is false', () => {
     render(<VideoCard video={video} isActive={false} />)
     expect(screen.queryByRole('button', { name: /skip back/i })).not.toBeInTheDocument()

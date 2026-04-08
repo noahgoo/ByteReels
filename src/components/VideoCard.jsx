@@ -18,7 +18,6 @@ export default function VideoCard({
   onTimeUpdate,
   gestureEstablished = false,
   onFirstGesture,
-  onNotInterested,
 }) {
   const initial = video.channelName.charAt(0).toUpperCase()
   const embedRef = useRef(null)
@@ -92,78 +91,36 @@ export default function VideoCard({
           {formatDuration(video.durationSeconds)} · {timeAgo(video.publishedAt)}
         </p>
 
-        {/* Tags + Not Interested inline */}
-        <div className="flex items-start justify-between gap-3">
-          <ul className="flex flex-wrap gap-1.5 flex-1 min-w-0" aria-label="tags">
-            {video.channelTags.map((tag) => (
-              <li
-                key={tag}
-                data-testid="tag-chip"
-                className="px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-300 text-xs"
-              >
-                {tag}
-              </li>
-            ))}
-          </ul>
-          {onNotInterested && (
-            <button
-              onClick={onNotInterested}
-              className="shrink-0 border border-neutral-700 text-neutral-400 hover:text-neutral-200 hover:border-neutral-500 active:text-neutral-200 text-xs px-3 py-1 rounded-full transition-colors min-h-[44px] flex items-center"
+        {/* Tags */}
+        <ul className="flex flex-wrap gap-1.5" aria-label="tags">
+          {video.channelTags.map((tag) => (
+            <li
+              key={tag}
+              data-testid="tag-chip"
+              className="px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-300 text-xs"
             >
-              Not interested
-            </button>
-          )}
-        </div>
+              {tag}
+            </li>
+          ))}
+        </ul>
       </div>
 
       {/* Skip controls — only on active card */}
       {isActive && (
-        <div className="absolute bottom-5 left-0 right-0 flex items-center justify-center gap-8 z-20 pointer-events-none">
+        <div className="absolute bottom-5 left-0 right-0 flex items-center justify-center gap-4 z-20 pointer-events-none">
           <button
             onClick={() => embedRef.current?.seekBy(-15)}
             aria-label="Skip back 15 seconds"
-            className="pointer-events-auto flex flex-col items-center gap-1"
+            className="pointer-events-auto bg-orange-500 active:bg-orange-400 text-white text-sm font-semibold px-7 py-3 rounded-full transition-colors shadow-lg"
           >
-            <div className="w-12 h-12 rounded-full bg-orange-500 active:bg-orange-400 flex items-center justify-center transition-colors shadow-lg">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="white"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="w-5 h-5"
-              >
-                <path d="M1 4v6h6" />
-                <path d="M3.51 15a9 9 0 1 0 .49-3.5" />
-                <text x="12" y="13.5" textAnchor="middle" fontSize="6" fill="white" stroke="none" fontWeight="bold">15</text>
-              </svg>
-            </div>
-            <span className="text-orange-400 text-[10px] font-medium">−15s</span>
+            −15s
           </button>
           <button
             onClick={() => embedRef.current?.seekBy(15)}
             aria-label="Skip forward 15 seconds"
-            className="pointer-events-auto flex flex-col items-center gap-1"
+            className="pointer-events-auto bg-orange-500 active:bg-orange-400 text-white text-sm font-semibold px-7 py-3 rounded-full transition-colors shadow-lg"
           >
-            <div className="w-12 h-12 rounded-full bg-orange-500 active:bg-orange-400 flex items-center justify-center transition-colors shadow-lg">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="white"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="w-5 h-5"
-              >
-                <path d="M23 4v6h-6" />
-                <path d="M20.49 15a9 9 0 1 1-.49-3.5" />
-                <text x="12" y="13.5" textAnchor="middle" fontSize="6" fill="white" stroke="none" fontWeight="bold">15</text>
-              </svg>
-            </div>
-            <span className="text-orange-400 text-[10px] font-medium">+15s</span>
+            +15s
           </button>
         </div>
       )}

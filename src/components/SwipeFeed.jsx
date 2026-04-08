@@ -19,7 +19,7 @@ function EmptyState({ icon, title, subtitle, action }) {
   )
 }
 
-export default function SwipeFeed({ isLoading = false }) {
+export default function SwipeFeed({ isLoading = false, onNotInterestedRef }) {
   const videos = useFeedStore((s) => s.videos)
   const activeFilter = useFeedStore((s) => s.activeFilter)
   const cursor = useFeedStore((s) => s.cursor)
@@ -222,6 +222,12 @@ export default function SwipeFeed({ isLoading = false }) {
     markHidden(videoId)
   }
 
+  // Keep the ref current so the app-shell button can trigger hide for the active video
+  if (onNotInterestedRef) {
+    const activeId = displayedVideos[cursor]?.id
+    onNotInterestedRef.current = activeId ? () => handleNotInterested(activeId) : null
+  }
+
   return (
     <div
       ref={mergedRef}
@@ -239,7 +245,6 @@ export default function SwipeFeed({ isLoading = false }) {
           savedProgress={getProgress(video.id)}
           gestureEstablished={gestureEstablished}
           onFirstGesture={() => setGestureEstablished(true)}
-          onNotInterested={() => handleNotInterested(video.id)}
           onTimeUpdate={(currentTime, duration) => {
             if (currentTime > 10) markStarted(video.id)
             if (duration > 0 && currentTime / duration > 0.9) markWatched(video.id)

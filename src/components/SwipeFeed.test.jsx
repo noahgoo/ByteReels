@@ -1,17 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import SwipeFeed from './SwipeFeed.jsx'
 import useFeedStore from '../store/feedStore.js'
 
 vi.mock('./VideoCard.jsx', () => ({
-  default: ({ video, isActive, onNotInterested }) => (
+  default: ({ video, isActive }) => (
     <div data-testid="video-card" data-active={String(isActive)}>
       {video.title}
-      {onNotInterested && (
-        <button data-testid="not-interested" onClick={onNotInterested}>
-          Not interested
-        </button>
-      )}
     </div>
   ),
 }))
@@ -114,20 +109,21 @@ describe('SwipeFeed', () => {
     expect(cards[2]).toHaveTextContent('Video 1')
   })
 
-  it('clicking Not Interested removes the video from the feed', () => {
+  it('onNotInterestedRef removes the active video from the feed', () => {
+    const ref = { current: null }
     useFeedStore.setState({ videos: [makeVideo(1), makeVideo(2)], cursor: 0 })
-    render(<SwipeFeed />)
-    fireEvent.click(screen.getAllByTestId('not-interested')[0])
+    render(<SwipeFeed onNotInterestedRef={ref} />)
+    act(() => ref.current?.())
     const cards = screen.getAllByTestId('video-card')
     expect(cards).toHaveLength(1)
     expect(cards[0]).toHaveTextContent('Video 2')
   })
 
-  it('Not Interested on the last card clamps cursor down', () => {
+  it('onNotInterestedRef on the last card clamps cursor down', () => {
+    const ref = { current: null }
     useFeedStore.setState({ videos: [makeVideo(1), makeVideo(2)], cursor: 1 })
-    render(<SwipeFeed />)
-    // click not-interested on the second card (index 1, which is cursor)
-    fireEvent.click(screen.getAllByTestId('not-interested')[1])
+    render(<SwipeFeed onNotInterestedRef={ref} />)
+    act(() => ref.current?.())
     expect(useFeedStore.getState().cursor).toBe(0)
   })
 })
