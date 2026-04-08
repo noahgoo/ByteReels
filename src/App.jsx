@@ -123,14 +123,8 @@ function Feed() {
         </div>
       )}
 
-      <div className="shrink-0 flex items-center pr-4">
-        <FilterBar />
-        <button
-          onClick={() => notInterestedRef.current?.()}
-          className="ml-auto shrink-0 border border-neutral-700 text-neutral-400 hover:text-neutral-200 hover:border-neutral-500 active:text-neutral-200 text-xs px-3 py-1.5 rounded-full transition-colors"
-        >
-          Not interested
-        </button>
+      <div className="shrink-0">
+        <FilterBar onNotInterested={() => notInterestedRef.current?.()} />
       </div>
 
       <main className="flex-1 overflow-hidden">
@@ -167,7 +161,7 @@ function AddChannelForm() {
     if (e.key === "Enter") {
       e.preventDefault();
       commitNewTag();
-    } else if (e.key === "," ) {
+    } else if (e.key === ",") {
       e.preventDefault();
       commitNewTag();
     }
@@ -237,11 +231,10 @@ function AddChannelForm() {
                   key={tag}
                   type="button"
                   onClick={() => toggleTag(tag)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                    active
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${active
                       ? "bg-white text-[#0d0d0d]"
                       : "bg-neutral-800 text-neutral-300 active:bg-neutral-700"
-                  }`}
+                    }`}
                 >
                   {tag}
                 </button>

@@ -23,7 +23,7 @@ const ChevronIcon = ({ open }) => (
   </svg>
 )
 
-export default function FilterBar() {
+export default function FilterBar({ onNotInterested } = {}) {
   const activeFilter = useFeedStore((s) => s.activeFilter)
   const setFilter = useFeedStore((s) => s.setFilter)
   const speedFilter = useFeedStore((s) => s.speedFilter)
@@ -55,7 +55,11 @@ export default function FilterBar() {
   const speedActive = speedFilter !== 'any'
 
   return (
-    <div ref={containerRef} className="shrink-0 relative px-4 py-2 flex items-center gap-2">
+    <div
+      ref={containerRef}
+      className="shrink-0 relative max-w-full px-4 py-2 flex items-center gap-2 overflow-x-auto overscroll-x-contain [&::-webkit-scrollbar]:hidden"
+      style={{ scrollbarWidth: 'none' }}
+    >
       {/* Topic filter trigger */}
       <div className="relative">
         <button
@@ -166,6 +170,32 @@ export default function FilterBar() {
           <line x1="15" y1="15" x2="21" y2="21" />
         </svg>
       </button>
+
+      {typeof onNotInterested === 'function' && (
+        <button
+          type="button"
+          onClick={() => onNotInterested()}
+          aria-label="Not interested — hide this video from your feed"
+          className="flex items-center justify-center h-11 w-11 shrink-0 rounded-full border border-neutral-700 bg-neutral-800 text-neutral-400 transition-colors active:bg-neutral-700"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="w-4 h-4"
+            aria-hidden
+          >
+            <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" />
+            <path d="M14.084 14.158a3 3 0 1 1-4.121-4.121" />
+            <path d="M17.479 17.499a10.75 10.75 0 0 1-5.48 2.501c-4.703 0-8.732-3.013-10.55-7.196a1 1 0 0 1 0-.804 10.74 10.74 0 0 1 2.188-3.417" />
+            <path d="m2 2 20 20" />
+          </svg>
+        </button>
+      )}
     </div>
   )
 }
