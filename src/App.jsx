@@ -142,8 +142,34 @@ function AddChannelForm() {
   const addChannel = useFeedStore((s) => s.addChannel);
   const channels = useFeedStore((s) => s.channels);
   const [input, setInput] = useState("");
-  const [tags, setTags] = useState("");
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [newTag, setNewTag] = useState("");
   const [status, setStatus] = useState(null); // null | 'loading' | { error } | { name }
+
+  const existingTags = [...new Set(channels.flatMap((c) => c.tags ?? []))].sort();
+
+  function toggleTag(tag) {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    );
+  }
+
+  function commitNewTag() {
+    const tag = newTag.trim().toLowerCase();
+    if (!tag) return;
+    if (!selectedTags.includes(tag)) setSelectedTags((prev) => [...prev, tag]);
+    setNewTag("");
+  }
+
+  function handleNewTagKeyDown(e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      commitNewTag();
+    } else if (e.key === "," ) {
+      e.preventDefault();
+      commitNewTag();
+    }
+  }
 
   const handleSubmit = useCallback(
     async (e) => {
@@ -157,6 +183,12 @@ function AddChannelForm() {
         return;
       }
 
+      // commit any partially-typed tag
+      const pendingTag = newTag.trim().toLowerCase();
+      const allTags = pendingTag && !selectedTags.includes(pendingTag)
+        ? [...selectedTags, pendingTag]
+        : selectedTags;
+
       setStatus("loading");
       try {
         const { id, name } = await resolveChannel(input.trim(), API_KEY);
@@ -164,25 +196,22 @@ function AddChannelForm() {
           setStatus({ error: `${name} is already in your feed.` });
           return;
         }
-        const parsedTags = tags
-          .split(",")
-          .map((t) => t.trim().toLowerCase())
-          .filter(Boolean);
-        addChannel({ id, name, tags: parsedTags, maxResults: 10 });
+        addChannel({ id, name, tags: allTags, maxResults: 10 });
         clearVideoCache();
         setInput("");
-        setTags("");
+        setSelectedTags([]);
+        setNewTag("");
         setStatus({ name });
         setTimeout(() => setStatus(null), 3000);
       } catch (err) {
         setStatus({
           error: err.message.includes("not found")
-            ? "Channel not found. Check the URL or handle."
+            ? "Channel not found. Check the handle and try again."
             : "Failed to resolve channel. Try again.",
         });
       }
     },
-    [input, tags, channels, addChannel],
+    [input, newTag, selectedTags, channels, addChannel],
   );
 
   return (
@@ -191,16 +220,64 @@ function AddChannelForm() {
         type="text"
         value={input}
         onChange={(e) => setInput(e.target.value)}
-        placeholder="youtube.com/@handle or channel ID"
+        placeholder="@handle or channel name"
         className="w-full min-h-11 px-4 rounded-xl bg-neutral-800 text-white text-sm placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
       />
-      <input
-        type="text"
-        value={tags}
-        onChange={(e) => setTags(e.target.value)}
-        placeholder="Tags: react, css, ai  (comma separated)"
-        className="w-full min-h-11 px-4 rounded-xl bg-neutral-800 text-white text-sm placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
-      />
+
+      {/* Tag picker */}
+      <div className="flex flex-col gap-1.5">
+        {existingTags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {existingTags.map((tag) => {
+              const active = selectedTags.includes(tag);
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => toggleTag(tag)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                    active
+                      ? "bg-white text-[#0d0d0d]"
+                      : "bg-neutral-800 text-neutral-300 active:bg-neutral-700"
+                  }`}
+                >
+                  {tag}
+                </button>
+              );
+            })}
+          </div>
+        )}
+        <input
+          type="text"
+          value={newTag}
+          onChange={(e) => setNewTag(e.target.value)}
+          onKeyDown={handleNewTagKeyDown}
+          onBlur={commitNewTag}
+          placeholder="Add a new tag…"
+          className="w-full min-h-11 px-4 rounded-xl bg-neutral-800 text-white text-sm placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+        />
+        {selectedTags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {selectedTags.map((tag) => (
+              <span
+                key={tag}
+                className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-neutral-700 text-neutral-200 text-xs"
+              >
+                {tag}
+                <button
+                  type="button"
+                  onClick={() => toggleTag(tag)}
+                  className="text-neutral-400 hover:text-white leading-none"
+                  aria-label={`Remove ${tag}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
       <button
         type="submit"
         disabled={status === "loading" || !input.trim()}
