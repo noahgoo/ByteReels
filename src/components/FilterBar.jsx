@@ -28,6 +28,8 @@ export default function FilterBar() {
   const setFilter = useFeedStore((s) => s.setFilter)
   const speedFilter = useFeedStore((s) => s.speedFilter)
   const setSpeedFilter = useFeedStore((s) => s.setSpeedFilter)
+  const shuffleEnabled = useFeedStore((s) => s.shuffleEnabled)
+  const toggleShuffle = useFeedStore((s) => s.toggleShuffle)
   const channels = useFeedStore((s) => s.channels)
   const ALL_TAGS = [...new Set(channels.flatMap((c) => c.tags))].sort()
 
@@ -143,6 +145,27 @@ export default function FilterBar() {
           </div>
         )}
       </div>
+
+      {/* Shuffle toggle */}
+      <button
+        onClick={toggleShuffle}
+        aria-label="Shuffle feed"
+        aria-pressed={shuffleEnabled}
+        className={`flex items-center justify-center h-11 w-11 rounded-full border transition-colors
+          ${shuffleEnabled
+            ? 'bg-orange-500/20 border-orange-500 text-orange-400'
+            : 'bg-neutral-800 border-neutral-700 text-neutral-400 active:bg-neutral-700'
+          }`}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+          className="w-4 h-4">
+          <polyline points="16 3 21 3 21 8" />
+          <line x1="4" y1="20" x2="21" y2="3" />
+          <polyline points="21 16 21 21 16 21" />
+          <line x1="15" y1="15" x2="21" y2="21" />
+        </svg>
+      </button>
     </div>
   )
 }

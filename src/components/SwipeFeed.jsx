@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useState } from 'react'
+import { useRef, useEffect, useLayoutEffect, useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useSwipeable } from 'react-swipeable'
 import useFeedStore from '../store/feedStore.js'
@@ -7,6 +7,14 @@ import VideoCardSkeleton from './VideoCardSkeleton.jsx'
 import { useWatchHistory } from '../hooks/useWatchHistory.js'
 import { useVideoProgress } from '../hooks/useVideoProgress.js'
 import { useHiddenVideos } from '../hooks/useHiddenVideos.js'
+
+function fisherYates(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
+}
 
 function EmptyState({ icon, title, subtitle, action }) {
   return (
@@ -23,6 +31,7 @@ export default function SwipeFeed({ isLoading = false, onNotInterestedRef }) {
   const videos = useFeedStore((s) => s.videos)
   const activeFilter = useFeedStore((s) => s.activeFilter)
   const speedFilter = useFeedStore((s) => s.speedFilter)
+  const shuffleEnabled = useFeedStore((s) => s.shuffleEnabled)
   const cursor = useFeedStore((s) => s.cursor)
   const channels = useFeedStore((s) => s.channels)
   const setFilter = useFeedStore((s) => s.setFilter)
@@ -52,7 +61,9 @@ export default function SwipeFeed({ isLoading = false, onNotInterestedRef }) {
   // a video hits 90% completion while the user is still watching it).
   // The sort picks up the latest watch state the next time the cursor moves.
   // Include speedFilter in key so sort recomputes when the bucket changes.
-  const filteredKey = speedFiltered.map((v) => v.id).join(',') + '|' + speedFilter
+  // Include shuffleEnabled in key so the pipeline recomputes on toggle,
+  // but NOT on swipes (cursor excluded — see bugs 1 & 2 below).
+  const filteredKey = speedFiltered.map((v) => v.id).join(',') + '|' + speedFilter + '|' + shuffleEnabled
   const sortKeyRef = useRef(null)
   const displayedRef = useRef([])
   // Sort key is based only on the video list — NOT cursor. This means the sort
@@ -65,7 +76,11 @@ export default function SwipeFeed({ isLoading = false, onNotInterestedRef }) {
   const sortKey = filteredKey
   if (sortKeyRef.current !== sortKey) {
     sortKeyRef.current = sortKey
-    displayedRef.current = [...speedFiltered].sort((a, b) => {
+    // Shuffle before watched-sink sort so watched videos still float to the bottom
+    // within the randomized order. JS .sort() is stable, so shuffle order is
+    // preserved within the unwatched group.
+    const toSort = shuffleEnabled ? fisherYates([...speedFiltered]) : [...speedFiltered]
+    displayedRef.current = toSort.sort((a, b) => {
       const aW = isWatched(a.id)
       const bW = isWatched(b.id)
       if (aW === bW) return 0
@@ -101,12 +116,23 @@ export default function SwipeFeed({ isLoading = false, onNotInterestedRef }) {
   )
 
   // ─── Scroll sync ────────────────────────────────────────────────────────────
+  // Use the feed container's scrollTop only — scrollIntoView() also scrolls the
+  // document/viewport on many browsers (esp. iOS Safari), which hides the app header.
   useEffect(() => {
-    const el = containerRef.current?.children[cursor]
-    if (typeof el?.scrollIntoView === 'function') {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
+    const container = containerRef.current
+    if (!container) return
+    const page = container.clientHeight
+    if (page <= 0) return
+    container.scrollTo({ top: cursor * page, behavior: 'smooth' })
   }, [cursor])
+
+  // When shuffle is toggled, reset scroll to top synchronously (before paint)
+  // so the reordered DOM doesn't flash at the old scroll position.
+  useLayoutEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0
+    }
+  }, [shuffleEnabled])
 
   // ─── Keyboard navigation ────────────────────────────────────────────────────
   useEffect(() => {
@@ -242,7 +268,7 @@ export default function SwipeFeed({ isLoading = false, onNotInterestedRef }) {
   return (
     <div
       ref={mergedRef}
-      className="h-full overflow-y-scroll snap-y snap-mandatory [&::-webkit-scrollbar]:hidden"
+      className="h-full overflow-y-scroll overscroll-y-contain snap-y snap-mandatory [&::-webkit-scrollbar]:hidden"
       style={{ scrollbarWidth: 'none' }}
     >
       {displayedVideos.map((video, i) => (

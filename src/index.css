@@ -1,1 +1,6 @@
 @import "tailwindcss";
+
+html, body, #root {
+  background-color: #0d0d0d;
+  height: 100%;
+}

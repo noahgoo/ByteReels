@@ -20,6 +20,7 @@ const INITIAL_STATE = {
   videos: [],
   activeFilter: 'all',
   speedFilter: 'any',
+  shuffleEnabled: false,
   cursor: 0,
   channels: loadChannels(),
 }
@@ -38,6 +39,8 @@ const useFeedStore = create((set) => ({
     localStorage.setItem('bytereels_speed_filter', speed)
     set({ speedFilter: speed, cursor: 0 })
   },
+
+  toggleShuffle: () => set((s) => ({ shuffleEnabled: !s.shuffleEnabled, cursor: 0 })),
 
   incrementCursor: () =>
     set((s) => ({ cursor: Math.max(0, Math.min(s.cursor + 1, s.videos.length - 1)) })),
