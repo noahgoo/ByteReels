@@ -140,4 +140,20 @@ describe('VideoCard', () => {
     rerender(<VideoCard video={video} isActive={true} />)
     expect(screen.getByRole('button', { name: /playback speed/i })).toHaveTextContent('1×')
   })
+
+  it('does not render share button when onShare is omitted', () => {
+    render(<VideoCard video={video} isActive={false} />)
+    expect(screen.queryByRole('button', { name: /share video/i })).not.toBeInTheDocument()
+  })
+
+  it('calls onShare with title and youtu.be url when share is clicked', () => {
+    const onShare = vi.fn()
+    render(<VideoCard video={video} isActive={false} onShare={onShare} />)
+    fireEvent.click(screen.getByRole('button', { name: /share video/i }))
+    expect(onShare).toHaveBeenCalledTimes(1)
+    expect(onShare).toHaveBeenCalledWith({
+      title: video.title,
+      url: 'https://youtu.be/abc123',
+    })
+  })
 })

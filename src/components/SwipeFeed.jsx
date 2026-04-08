@@ -90,9 +90,11 @@ export default function SwipeFeed({ isLoading = false, onNotInterestedRef }) {
   const displayedVideos = displayedRef.current
 
   const [gestureEstablished, setGestureEstablished] = useState(false)
+  const [copyToast, setCopyToast] = useState(null)
 
   const containerRef = useRef(null)
   const scrollingRef = useRef(false)
+  const shareToastTimeoutRef = useRef(null)
 
   // ─── Swipe handlers ─────────────────────────────────────────────────────────
   const handlers = useSwipeable({
@@ -194,6 +196,36 @@ export default function SwipeFeed({ isLoading = false, onNotInterestedRef }) {
     return () => observer.disconnect()
   }, [displayedVideos])
 
+  const handleShare = useCallback(async ({ title, url }) => {
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title, url })
+        return
+      } catch (e) {
+        if (e?.name === 'AbortError') return
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url)
+      if (shareToastTimeoutRef.current) {
+        clearTimeout(shareToastTimeoutRef.current)
+      }
+      setCopyToast('Link copied!')
+      shareToastTimeoutRef.current = setTimeout(() => {
+        setCopyToast(null)
+        shareToastTimeoutRef.current = null
+      }, 2000)
+    } catch {
+      /* clipboard unavailable */
+    }
+  }, [])
+
+  useEffect(() => () => {
+    if (shareToastTimeoutRef.current) {
+      clearTimeout(shareToastTimeoutRef.current)
+    }
+  }, [])
+
   // ─── Loading state ───────────────────────────────────────────────────────────
   if (isLoading && videos.length === 0) {
     return (
@@ -266,29 +298,41 @@ export default function SwipeFeed({ isLoading = false, onNotInterestedRef }) {
   }
 
   return (
-    <div
-      ref={mergedRef}
-      className="h-full overflow-y-scroll overscroll-y-contain snap-y snap-mandatory [&::-webkit-scrollbar]:hidden"
-      style={{ scrollbarWidth: 'none' }}
-    >
-      {displayedVideos.map((video, i) => (
-        <VideoCard
-          key={video.id}
-          video={video}
-          isActive={i === cursor}
-          loadPlayer={i >= cursor - 1 && i <= cursor + 2}
-          preloadDelay={i === cursor || i === cursor + 1 ? 0 : 1000}
-          isWatched={isWatched(video.id)}
-          savedProgress={getProgress(video.id)}
-          gestureEstablished={gestureEstablished}
-          onFirstGesture={() => setGestureEstablished(true)}
-          onTimeUpdate={(currentTime, duration) => {
-            if (currentTime > 10) markStarted(video.id)
-            if (duration > 0 && currentTime / duration > 0.9) markWatched(video.id)
-            if (currentTime > 0) saveProgress(video.id, currentTime)
-          }}
-        />
-      ))}
-    </div>
+    <>
+      <div
+        ref={mergedRef}
+        className="h-full overflow-y-scroll overscroll-y-contain snap-y snap-mandatory [&::-webkit-scrollbar]:hidden"
+        style={{ scrollbarWidth: 'none' }}
+      >
+        {displayedVideos.map((video, i) => (
+          <VideoCard
+            key={video.id}
+            video={video}
+            isActive={i === cursor}
+            loadPlayer={i >= cursor - 1 && i <= cursor + 2}
+            preloadDelay={i === cursor || i === cursor + 1 ? 0 : 1000}
+            isWatched={isWatched(video.id)}
+            savedProgress={getProgress(video.id)}
+            gestureEstablished={gestureEstablished}
+            onFirstGesture={() => setGestureEstablished(true)}
+            onShare={handleShare}
+            onTimeUpdate={(currentTime, duration) => {
+              if (currentTime > 10) markStarted(video.id)
+              if (duration > 0 && currentTime / duration > 0.9) markWatched(video.id)
+              if (currentTime > 0) saveProgress(video.id, currentTime)
+            }}
+          />
+        ))}
+      </div>
+      {copyToast ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="pointer-events-none fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-50 -translate-x-1/2 rounded-full bg-neutral-800 px-4 py-2 text-sm text-white shadow-lg"
+        >
+          {copyToast}
+        </div>
+      ) : null}
+    </>
   )
 }

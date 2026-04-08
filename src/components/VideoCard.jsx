@@ -12,7 +12,7 @@ function formatPlaybackSpeedLabel(rate) {
 
 /**
  * Full-viewport video card.
- * @param {{ video: object, isActive: boolean, loadPlayer: boolean }} props
+ * @param {{ video: object, isActive: boolean, loadPlayer: boolean, onShare?: function }} props
  * loadPlayer: mount the YouTube IFrame player (true for cursor ±1, false otherwise
  * to avoid hitting the browser's WebGL context limit)
  */
@@ -26,6 +26,7 @@ export default function VideoCard({
   onTimeUpdate,
   gestureEstablished = false,
   onFirstGesture,
+  onShare,
 }) {
   const initial = video.channelName.charAt(0).toUpperCase()
   const embedRef = useRef(null)
@@ -100,16 +101,42 @@ export default function VideoCard({
 
       <div className="flex flex-col gap-2 px-4 py-3">
         {/* Channel row */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <div
             aria-hidden="true"
             className="w-9 h-9 rounded-full bg-neutral-700 flex items-center justify-center text-white text-sm font-medium shrink-0"
           >
             {initial}
           </div>
-          <span className="text-neutral-300 text-sm font-medium truncate">
+          <span className="text-neutral-300 text-sm font-medium truncate min-w-0 flex-1">
             {video.channelName}
           </span>
+          {onShare && (
+            <button
+              type="button"
+              onClick={() =>
+                onShare({ title: video.title, url: `https://youtu.be/${video.id}` })
+              }
+              aria-label="Share video"
+              className="shrink-0 min-h-11 min-w-11 inline-flex items-center justify-center rounded-lg text-neutral-400 active:opacity-70 transition-opacity"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="w-6 h-6"
+                aria-hidden="true"
+              >
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                <polyline points="16 6 12 2 8 6" />
+                <line x1="12" x2="12" y1="2" y2="15" />
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* Title */}
@@ -136,33 +163,66 @@ export default function VideoCard({
         </ul>
       </div>
 
-      {/* Skip + playback speed — only on active card */}
+      {/* Skip + playback speed — fixed to viewport so it stays put during snap-scroll */}
       {isActive && (
-        <div className="pointer-events-none absolute bottom-10 left-0 right-0 z-20 flex min-h-11 items-center justify-center gap-10">
-          <button
-            type="button"
-            onClick={() => embedRef.current?.seekBy(-15)}
-            aria-label="Skip back 15 seconds"
-            className="pointer-events-auto min-h-11 bg-sky-400 active:bg-sky-300 text-white text-md font-semibold px-14 py-3 rounded-full transition-colors shadow-lg"
+        <div
+          className="pointer-events-none fixed left-0 right-0 z-30 flex justify-center"
+          style={{ bottom: 'max(env(safe-area-inset-bottom), 24px)' }}
+        >
+          <div
+            className="pointer-events-auto flex items-center rounded-full"
+            style={{
+              background: 'rgba(16, 16, 16, 0.82)',
+              backdropFilter: 'blur(28px)',
+              WebkitBackdropFilter: 'blur(28px)',
+              border: '1px solid rgba(255,255,255,0.09)',
+              boxShadow: '0 8px 40px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)',
+            }}
           >
-            −15s
-          </button>
-          <button
-            type="button"
-            onClick={() => embedRef.current?.seekBy(15)}
-            aria-label="Skip forward 15 seconds"
-            className="pointer-events-auto min-h-11 bg-sky-400 active:bg-sky-300 text-white text-md font-semibold px-14 py-3 rounded-full transition-colors shadow-lg"
-          >
-            +15s
-          </button>
-          <button
-            type="button"
-            onClick={handlePlaybackSpeedTap}
-            aria-label={`Playback speed, currently ${formatPlaybackSpeedLabel(currentSpeed)}. Tap to change.`}
-            className="pointer-events-auto absolute right-4 min-h-11 min-w-11 px-3 bg-sky-400 active:bg-sky-300 text-white text-sm font-semibold rounded-full transition-colors shadow-lg"
-          >
-            {formatPlaybackSpeedLabel(currentSpeed)}
-          </button>
+            {/* Skip back */}
+            <button
+              type="button"
+              onClick={() => embedRef.current?.seekBy(-15)}
+              aria-label="Skip back 15 seconds"
+              className="flex items-center gap-2 h-11 pl-5 pr-4 text-white/70 text-sm font-medium active:text-white active:bg-white/[0.07] rounded-l-full transition-colors select-none"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M11.5 12 20 6v12L11.5 12ZM4 6h2v12H4V6Z" />
+              </svg>
+              <span>15s</span>
+            </button>
+
+            {/* Divider */}
+            <div className="w-px bg-white/10 self-stretch my-2.5 shrink-0" />
+
+            {/* Playback speed */}
+            <button
+              type="button"
+              onClick={handlePlaybackSpeedTap}
+              aria-label={`Playback speed: ${formatPlaybackSpeedLabel(currentSpeed)}`}
+              className={`flex items-center justify-center h-11 w-14 text-xs font-semibold tracking-wide active:bg-white/[0.07] transition-colors select-none ${
+                currentSpeed === 1 ? 'text-white/35' : 'text-white/90'
+              }`}
+            >
+              {formatPlaybackSpeedLabel(currentSpeed)}
+            </button>
+
+            {/* Divider */}
+            <div className="w-px bg-white/10 self-stretch my-2.5 shrink-0" />
+
+            {/* Skip forward */}
+            <button
+              type="button"
+              onClick={() => embedRef.current?.seekBy(15)}
+              aria-label="Skip forward 15 seconds"
+              className="flex items-center gap-2 h-11 pl-4 pr-5 text-white/70 text-sm font-medium active:text-white active:bg-white/[0.07] rounded-r-full transition-colors select-none"
+            >
+              <span>15s</span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12.5 12 4 6v12l8.5-6ZM18 6h2v12h-2V6Z" />
+              </svg>
+            </button>
+          </div>
         </div>
       )}
     </article>
