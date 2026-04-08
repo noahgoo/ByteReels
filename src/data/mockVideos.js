@@ -61,7 +61,7 @@ const mockVideos = [
     channelId: "mock-channel-6",
     channelName: "YouTube",
     channelTags: ["web"],
-    durationSeconds: 300,
+    durationSeconds: 20,
     publishedAt: new Date(Date.now() - 6 * 86_400_000).toISOString(),
     thumbnailUrl: "https://img.youtube.com/vi/-uViRsr3QJY/hqdefault.jpg",
   },

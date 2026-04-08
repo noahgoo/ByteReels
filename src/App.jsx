@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import useFeedStore from "./store/feedStore.js";
-import { loadPersistedFilter } from "./store/feedStore.js";
+import { loadPersistedFilter, loadPersistedSpeedFilter } from "./store/feedStore.js";
 import {
   fetchAllVideos,
   clearVideoCache,
@@ -23,6 +23,7 @@ const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 function Feed() {
   const setVideos = useFeedStore((s) => s.setVideos);
   const setFilter = useFeedStore((s) => s.setFilter);
+  const setSpeedFilter = useFeedStore((s) => s.setSpeedFilter);
   const channels = useFeedStore((s) => s.channels);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -30,10 +31,11 @@ function Feed() {
   const isOnline = useOnlineStatus();
   const notInterestedRef = useRef(null);
 
-  // Restore active filter from localStorage on mount
+  // Restore active filters from localStorage on mount
   useEffect(() => {
     setFilter(loadPersistedFilter());
-  }, [setFilter]);
+    setSpeedFilter(loadPersistedSpeedFilter());
+  }, [setFilter, setSpeedFilter]);
 
   useEffect(() => {
     if (USE_MOCK) {

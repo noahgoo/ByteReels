@@ -22,6 +22,7 @@ function EmptyState({ icon, title, subtitle, action }) {
 export default function SwipeFeed({ isLoading = false, onNotInterestedRef }) {
   const videos = useFeedStore((s) => s.videos)
   const activeFilter = useFeedStore((s) => s.activeFilter)
+  const speedFilter = useFeedStore((s) => s.speedFilter)
   const cursor = useFeedStore((s) => s.cursor)
   const channels = useFeedStore((s) => s.channels)
   const setFilter = useFeedStore((s) => s.setFilter)
@@ -37,11 +38,21 @@ export default function SwipeFeed({ isLoading = false, onNotInterestedRef }) {
   const filtered = (activeFilter === 'all' ? videos : videos.filter((v) => v.channelTags?.includes(activeFilter)))
     .filter((v) => !isHidden(v.id))
 
-  // Step 2: stable sort — only recomputes when the video set or cursor changes,
+  // Step 2: speed (duration) filter — AND-combined with tag filter
+  const SPEED_RANGES = { quick: [0, 120], short: [120, 300], medium: [300, 600] }
+  const speedFiltered = speedFilter === 'any'
+    ? filtered
+    : filtered.filter((v) => {
+        const [min, max] = SPEED_RANGES[speedFilter]
+        return v.durationSeconds >= min && v.durationSeconds < max
+      })
+
+  // Step 3: stable sort — only recomputes when the video set changes,
   // NOT when isWatched changes mid-playback (prevents the feed jumping when
   // a video hits 90% completion while the user is still watching it).
   // The sort picks up the latest watch state the next time the cursor moves.
-  const filteredKey = filtered.map((v) => v.id).join(',')
+  // Include speedFilter in key so sort recomputes when the bucket changes.
+  const filteredKey = speedFiltered.map((v) => v.id).join(',') + '|' + speedFilter
   const sortKeyRef = useRef(null)
   const displayedRef = useRef([])
   // Sort key is based only on the video list — NOT cursor. This means the sort
@@ -54,7 +65,7 @@ export default function SwipeFeed({ isLoading = false, onNotInterestedRef }) {
   const sortKey = filteredKey
   if (sortKeyRef.current !== sortKey) {
     sortKeyRef.current = sortKey
-    displayedRef.current = [...filtered].sort((a, b) => {
+    displayedRef.current = [...speedFiltered].sort((a, b) => {
       const aW = isWatched(a.id)
       const bW = isWatched(b.id)
       if (aW === bW) return 0

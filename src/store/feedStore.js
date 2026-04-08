@@ -19,6 +19,7 @@ function saveChannels(channels) {
 const INITIAL_STATE = {
   videos: [],
   activeFilter: 'all',
+  speedFilter: 'any',
   cursor: 0,
   channels: loadChannels(),
 }
@@ -31,6 +32,11 @@ const useFeedStore = create((set) => ({
   setFilter: (filter) => {
     localStorage.setItem('activeFilter', filter)
     set({ activeFilter: filter, cursor: 0 })
+  },
+
+  setSpeedFilter: (speed) => {
+    localStorage.setItem('bytereels_speed_filter', speed)
+    set({ speedFilter: speed, cursor: 0 })
   },
 
   incrementCursor: () =>
@@ -61,6 +67,10 @@ useFeedStore.getInitialState = () => INITIAL_STATE
 
 export function loadPersistedFilter() {
   return localStorage.getItem('activeFilter') ?? 'all'
+}
+
+export function loadPersistedSpeedFilter() {
+  return localStorage.getItem('bytereels_speed_filter') ?? 'any'
 }
 
 export default useFeedStore
