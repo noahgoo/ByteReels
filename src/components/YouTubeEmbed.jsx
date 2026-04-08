@@ -59,6 +59,11 @@ const YouTubeEmbed = forwardRef(function YouTubeEmbed({
       const newTime = Math.max(0, player.getCurrentTime() + seconds)
       player.seekTo(newTime, true)
     },
+    setPlaybackRate(rate) {
+      const player = playerRef.current
+      if (!player || typeof player.setPlaybackRate !== 'function') return
+      player.setPlaybackRate(rate)
+    },
   }), [])
 
   useEffect(() => {

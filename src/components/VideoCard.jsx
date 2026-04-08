@@ -1,6 +1,14 @@
-import { useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import YouTubeEmbed from './YouTubeEmbed.jsx'
 import { formatDuration, timeAgo } from '../utils/format.js'
+
+const PLAYBACK_SPEEDS = [1, 1.25, 1.5, 2, 0.75]
+
+function formatPlaybackSpeedLabel(rate) {
+  if (Number.isInteger(rate)) return `${rate}×`
+  const str = rate.toFixed(2).replace(/\.?0+$/, '')
+  return `${str}×`
+}
 
 /**
  * Full-viewport video card.
@@ -21,6 +29,29 @@ export default function VideoCard({
 }) {
   const initial = video.channelName.charAt(0).toUpperCase()
   const embedRef = useRef(null)
+  const [speedIndex, setSpeedIndex] = useState(0)
+  const currentSpeed = PLAYBACK_SPEEDS[speedIndex]
+
+  useEffect(() => {
+    if (!isActive) {
+      setSpeedIndex(0)
+      embedRef.current?.setPlaybackRate?.(1)
+    }
+  }, [isActive])
+
+  useEffect(() => {
+    setSpeedIndex(0)
+    embedRef.current?.setPlaybackRate?.(1)
+  }, [video.id])
+
+  function handlePlaybackSpeedTap() {
+    setSpeedIndex((i) => {
+      const next = (i + 1) % PLAYBACK_SPEEDS.length
+      const nextRate = PLAYBACK_SPEEDS[next]
+      embedRef.current?.setPlaybackRate?.(nextRate)
+      return next
+    })
+  }
 
   return (
     <article className="relative h-full w-full flex flex-col justify-center bg-[#0d0d0d] snap-start overflow-hidden">
@@ -105,22 +136,32 @@ export default function VideoCard({
         </ul>
       </div>
 
-      {/* Skip controls — only on active card */}
+      {/* Skip + playback speed — only on active card */}
       {isActive && (
-        <div className="absolute bottom-10 left-0 right-0 flex items-center justify-center gap-10 z-20 pointer-events-none">
+        <div className="pointer-events-none absolute bottom-10 left-0 right-0 z-20 flex min-h-11 items-center justify-center gap-10">
           <button
+            type="button"
             onClick={() => embedRef.current?.seekBy(-15)}
             aria-label="Skip back 15 seconds"
-            className="pointer-events-auto bg-sky-400 active:bg-sky-300 text-white text-md font-semibold px-14 py-3 rounded-full transition-colors shadow-lg"
+            className="pointer-events-auto min-h-11 bg-sky-400 active:bg-sky-300 text-white text-md font-semibold px-14 py-3 rounded-full transition-colors shadow-lg"
           >
             −15s
           </button>
           <button
+            type="button"
             onClick={() => embedRef.current?.seekBy(15)}
             aria-label="Skip forward 15 seconds"
-            className="pointer-events-auto bg-sky-400 active:bg-sky-300 text-white text-md font-semibold px-14 py-3 rounded-full transition-colors shadow-lg"
+            className="pointer-events-auto min-h-11 bg-sky-400 active:bg-sky-300 text-white text-md font-semibold px-14 py-3 rounded-full transition-colors shadow-lg"
           >
             +15s
+          </button>
+          <button
+            type="button"
+            onClick={handlePlaybackSpeedTap}
+            aria-label={`Playback speed, currently ${formatPlaybackSpeedLabel(currentSpeed)}. Tap to change.`}
+            className="pointer-events-auto absolute right-4 min-h-11 min-w-11 px-3 bg-sky-400 active:bg-sky-300 text-white text-sm font-semibold rounded-full transition-colors shadow-lg"
+          >
+            {formatPlaybackSpeedLabel(currentSpeed)}
           </button>
         </div>
       )}

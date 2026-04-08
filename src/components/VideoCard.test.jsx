@@ -5,11 +5,15 @@ import VideoCard from './VideoCard.jsx'
 import { formatDuration, timeAgo } from '../utils/format.js'
 
 // forwardRef mock so VideoCard can attach embedRef without React warnings.
-// Exposes a seekBy spy so skip-button tests can assert it was called.
+// Exposes seekBy / setPlaybackRate spies for control tests.
 const seekBySpy = vi.fn()
+const setPlaybackRateSpy = vi.fn()
 vi.mock('./YouTubeEmbed.jsx', () => ({
   default: forwardRef((_props, ref) => {
-    useImperativeHandle(ref, () => ({ seekBy: seekBySpy }), [])
+    useImperativeHandle(ref, () => ({
+      seekBy: seekBySpy,
+      setPlaybackRate: setPlaybackRateSpy,
+    }), [])
     return <div data-testid="youtube-embed" />
   }),
 }))
@@ -26,6 +30,10 @@ const video = {
 }
 
 describe('VideoCard', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('renders the video title', () => {
     render(<VideoCard video={video} isActive={false} />)
     expect(screen.getByText('How Vite Works Under the Hood')).toBeInTheDocument()
@@ -94,5 +102,42 @@ describe('VideoCard', () => {
     render(<VideoCard video={video} isActive={true} />)
     fireEvent.click(screen.getByRole('button', { name: /skip forward 15/i }))
     expect(seekBySpy).toHaveBeenCalledWith(15)
+  })
+
+  it('does not render playback speed control when isActive is false', () => {
+    render(<VideoCard video={video} isActive={false} />)
+    expect(screen.queryByRole('button', { name: /playback speed/i })).not.toBeInTheDocument()
+  })
+
+  it('renders playback speed control when isActive is true', () => {
+    render(<VideoCard video={video} isActive={true} />)
+    const btn = screen.getByRole('button', { name: /playback speed/i })
+    expect(btn).toHaveTextContent('1×')
+  })
+
+  it('cycles playback speed and calls setPlaybackRate on tap', () => {
+    render(<VideoCard video={video} isActive={true} />)
+    const btn = screen.getByRole('button', { name: /playback speed/i })
+    fireEvent.click(btn)
+    expect(btn).toHaveTextContent('1.25×')
+    expect(setPlaybackRateSpy).toHaveBeenLastCalledWith(1.25)
+    fireEvent.click(btn)
+    expect(btn).toHaveTextContent('1.5×')
+    expect(setPlaybackRateSpy).toHaveBeenLastCalledWith(1.5)
+  })
+
+  it('resets playback speed to 1× when card becomes inactive and restores label when active again', () => {
+    const { rerender } = render(<VideoCard video={video} isActive={true} />)
+    const speedBtn = () => screen.getByRole('button', { name: /playback speed/i })
+    fireEvent.click(speedBtn())
+    fireEvent.click(speedBtn())
+    expect(speedBtn()).toHaveTextContent('1.5×')
+
+    setPlaybackRateSpy.mockClear()
+    rerender(<VideoCard video={video} isActive={false} />)
+    expect(setPlaybackRateSpy).toHaveBeenCalledWith(1)
+
+    rerender(<VideoCard video={video} isActive={true} />)
+    expect(screen.getByRole('button', { name: /playback speed/i })).toHaveTextContent('1×')
   })
 })
